@@ -1,6 +1,5 @@
+import { Gender, IUser } from "@/types";
 import mongoose, { Schema, models, Model } from "mongoose";
-import { IUser } from "@/types";
-import { Gender } from "@/types/enums";
 
 const userSchema = new Schema<IUser>(
   {
