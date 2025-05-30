@@ -75,12 +75,12 @@ jobs:
             fi
 
             if [ "$SCRIPT_BRANCH_NAME" = "master" ]; then
-              REPO_DIR="~/healio-ai-prod"
+              REPO_DIR="github/Healio.ai"
               APP_HOST_PORT="3010"
               IMAGE_TAG="latest"
               TARGET_NODE_ENV="production"
             elif [ "$SCRIPT_BRANCH_NAME" = "dev" ]; then
-              REPO_DIR="~/healio-ai-dev"
+              REPO_DIR="github/Healio.ai"
               APP_HOST_PORT="3011"
               IMAGE_TAG="dev"
               TARGET_NODE_ENV="development"
