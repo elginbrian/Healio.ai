@@ -6,7 +6,7 @@ import { Search } from 'lucide-react';
 
 interface TextFieldProps {
   placeholder?: string; 
-  onSearch?: (searchTerm: string) => void; // Fungsi yang dipanggil saat pencarian
+  onSearch?: (searchTerm: string) => void;
 }
 
 const SearchField = ({ placeholder = 'Cari Fasilitas Kesehatan', onSearch }: TextFieldProps) => {

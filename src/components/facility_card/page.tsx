@@ -1,8 +1,7 @@
-// components/facility_card/page.jsx (atau FacilityCard.jsx)
 'use client'
 
 import React from 'react';
-import { Star } from 'lucide-react'; // Import ikon bintang
+import { Star } from 'lucide-react';
 
 interface FacilityCardProps {
   imageSrc: string;
@@ -36,8 +35,8 @@ const FacilityCard = ({
         <Star
           key={i}
           size={16}
-          fill={currentRating >= i ? '#FFD700' : '#d1d5db'} // Emas untuk terisi, abu-abu untuk kosong
-          stroke={currentRating >= i ? '#FFD700' : '#d1d5db'} // Stroke yang sama dengan fill
+          fill={currentRating >= i ? '#FFD700' : '#d1d5db'}
+          stroke={currentRating >= i ? '#FFD700' : '#d1d5db'}
         />
       );
     }
@@ -45,14 +44,14 @@ const FacilityCard = ({
   };
 
   return (
-    <div className='w-96 rounded-2xl shadow-lg bg-white overflow-hidden'> {/* Ganti shadow-md jadi shadow-lg, tambah bg-white */}
+    <div className='w-96 rounded-2xl shadow-lg bg-white overflow-hidden'>
       <div className='relative w-full h-40'>
         <img src={imageSrc} className='w-full h-full object-cover rounded-t-2xl' alt={name} />
-        {/* Label Rawat Inap */}
+
         <div className='absolute top-4 right-4 bg-[var(--color-p-300)] text-white text-sm font-semibold px-3 py-1 rounded-full'>
           {serviceType}
         </div>
-        {/* Label Harga */}
+
         <div className='absolute bottom-4 right-4 bg-[var(--color-p-300)] text-white text-sm font-semibold px-3 py-1 rounded-full'>
           {priceRange}
         </div>

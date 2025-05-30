@@ -1,31 +1,22 @@
-FROM node:18-alpine AS builder
+FROM node:18-alpine
+
 WORKDIR /app
 
+# Install dependencies
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
+# Copy all files
 COPY . .
 
-ENV NODE_ENV="production"
-
+# Build the app
 RUN npm run build
-
-FROM node:18-alpine AS runner
-WORKDIR /app
-
-ENV NODE_ENV="production"
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
 
 EXPOSE 3000
 
+# Set environment variables
+ENV NODE_ENV="production"
 ENV PORT=3000
 
-CMD ["node", "server.js"]
+# Use different commands based on environment
+CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npm start; else npm run dev; fi"]

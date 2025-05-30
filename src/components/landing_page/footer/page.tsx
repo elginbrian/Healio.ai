@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Mail, Phone } from 'lucide-react' // pastikan lucide-react sudah diinstal
+import { Mail, Phone } from 'lucide-react'
 
 const Footer = () => {
   return (
@@ -30,3 +30,4 @@ const Footer = () => {
 }
 
 export default Footer
+

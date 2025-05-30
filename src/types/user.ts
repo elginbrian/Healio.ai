@@ -7,6 +7,7 @@ export interface IUser {
   password_hash: string;
   age: number;
   gender: Gender;
+  phone: string;
   ktp_number: string;
   bpjs_status: boolean;
   address: string;
