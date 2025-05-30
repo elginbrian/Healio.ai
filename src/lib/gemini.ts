@@ -89,6 +89,7 @@ export async function findAndStructureNewFacilities(area: string): Promise<Parti
         2. Untuk SETIAP fasilitas yang Anda temukan, lakukan riset mendalam untuk mengisi SEMUA field yang memungkinkan sesuai dengan struktur interface TypeScript di bawah ini.
         3. Output WAJIB berupa sebuah JSON array yang valid. Setiap elemen array adalah objek yang mewakili satu fasilitas.
         4. Jika sebuah field (selain 'name' dan 'address') tidak dapat ditemukan informasinya, JANGAN sertakan field tersebut di dalam objek JSON.
+        5. Untuk field 'image_url', cari gambar fasilitas dari sumber tepercaya (situs resmi, Google Maps, atau direktori kesehatan).
 
         **INTERFACE TYPESCRIPT TARGET (Struktur Output yang Wajib Diikuti):**
         \`\`\`typescript
@@ -105,6 +106,7 @@ export async function findAndStructureNewFacilities(area: string): Promise<Parti
           };
           phone?: string;
           services_offered?: string[];
+          image_url?: string;
         }
         \`\`\`
 
@@ -120,7 +122,8 @@ export async function findAndStructureNewFacilities(area: string): Promise<Parti
             "coordinates": [112.631, -7.973]
           },
           "phone": "(0341) 362101",
-          "services_offered": ["Instalasi Gawat Darurat", "Rawat Inap", "Poliklinik Spesialis", "Radiologi"]
+          "services_offered": ["Instalasi Gawat Darurat", "Rawat Inap", "Poliklinik Spesialis", "Radiologi"],
+          "image_url": "https://example.com/images/rsud-saiful-anwar.jpg"
         }
         \`\`\`
 
@@ -161,9 +164,10 @@ export async function enrichFacilityDataWithGemini(facility: IFacility): Promise
 
       **Instruksi Kritis:**
       1.  Verifikasi semua field dari data yang ada. Jika Anda menemukan informasi yang lebih akurat atau baru (misalnya, nomor telepon atau rating baru), gunakan data baru tersebut.
-      2.  Cari informasi untuk field yang mungkin masih kosong (misalnya \`tariff_min\` atau \`tariff_max\`).
-      3.  Kembalikan hasilnya sebagai **SATU OBJEK JSON TUNGGAL** yang valid dan sesuai dengan struktur interface TypeScript di bawah ini.
-      4.  Jika sebuah field tidak dapat ditemukan atau diverifikasi, jangan sertakan field tersebut di dalam JSON balasan Anda.
+      2.  Cari informasi untuk field yang mungkin masih kosong (misalnya \`tariff_min\`, \`tariff_max\`, atau \`image_url\`).
+      3.  Untuk field \`image_url\`, cari gambar fasilitas dari sumber tepercaya (situs resmi, Google Maps, atau direktori kesehatan).
+      4.  Kembalikan hasilnya sebagai **SATU OBJEK JSON TUNGGAL** yang valid dan sesuai dengan struktur interface TypeScript di bawah ini.
+      5.  Jika sebuah field tidak dapat ditemukan atau diverifikasi, jangan sertakan field tersebut di dalam JSON balasan Anda.
 
       **INTERFACE TYPESCRIPT TARGET (Struktur Output yang Wajib Diikuti):**
       \`\`\`typescript
@@ -180,6 +184,7 @@ export async function enrichFacilityDataWithGemini(facility: IFacility): Promise
         };
         phone?: string;
         services_offered?: string[];
+        image_url?: string;
       }
       \`\`\`
 
@@ -188,7 +193,8 @@ export async function enrichFacilityDataWithGemini(facility: IFacility): Promise
       {
         "overall_rating": 4.7,
         "phone": "(0341) 362102",
-        "services_offered": ["IGD", "Rawat Inap", "Poliklinik Spesialis", "Radiologi", "Bedah Sentral", "Farmasi", "Rehabilitasi Medik"]
+        "services_offered": ["IGD", "Rawat Inap", "Poliklinik Spesialis", "Radiologi", "Bedah Sentral", "Farmasi", "Rehabilitasi Medik"],
+        "image_url": "https://example.com/images/rsud-saiful-anwar.jpg"
       }
       \`\`\`
       
@@ -213,4 +219,83 @@ export async function enrichFacilityDataWithGemini(facility: IFacility): Promise
     return null;
   }
 }
+
+export async function searchFacilitiesWithGemini(
+  query: string,
+  userLocation: { latitude: number; longitude: number },
+  maxDistanceKm: number,
+  maxBudget: number
+): Promise<Partial<IFacility>[]> {
+  const prompt = `
+    **Task**: You are a healthcare facility search expert. Analyze the user's search query and find the most relevant healthcare facilities.
+    
+    **User Query**: "${query}"
+    
+    **User Location**: Latitude ${userLocation.latitude}, Longitude ${userLocation.longitude}
+    **Maximum Distance**: ${maxDistanceKm} km
+    **Maximum Budget**: Rp${maxBudget.toLocaleString()}
+    
+    **Instructions**:
+    1. Interpret what the user is looking for (e.g., type of facility, service, specialty, location)
+    2. Return 3-5 relevant healthcare facilities based on the query
+    3. If the query mentions a specific condition or treatment, suggest appropriate facilities
+    4. If the query is vague, suggest general healthcare facilities nearby
+    5. Ensure results include appropriate facility details
+    
+    **Output Format**:
+    Return a JSON array of facilities. Each facility should include these fields:
+    - name: string (facility name)
+    - type: "HOSPITAL" | "CLINIC" | "PUSKESMAS" (facility type)
+    - address: string (complete address)
+    - tariff_min: number (optional minimum cost in Rupiah)
+    - tariff_max: number (optional maximum cost in Rupiah)
+    - overall_rating: number (rating between 1-5)
+    - latitude: number (facility latitude)
+    - longitude: number (facility longitude)
+    - phone: string (optional contact number)
+    - services_offered: string (comma-separated list of services)
+    - image_url: string (optional URL to facility image)
+    
+    Return ONLY the JSON array with no explanation or additional text.
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    let text = response.text().trim();
+    
+    text = text.replace(/```json|```/g, "").trim();
+    
+    if (!text.startsWith("[") || !text.endsWith("]")) {
+      console.error("Unexpected Gemini response format:", text);
+      return [];
+    }
+    
+    try {
+      const facilities = JSON.parse(text);
+      
+      const validFacilities = facilities.filter(
+        (facility: any) => 
+          facility && 
+          facility.name && 
+          facility.address && 
+          (facility.latitude !== undefined && facility.longitude !== undefined)
+      );
+      
+      return validFacilities.map((facility: any, index: number) => ({
+        ...facility,
+        _id: `search-${Date.now()}-${index}`,
+      }));
+      
+    } catch (parseError) {
+      console.error("Error parsing Gemini search results:", parseError);
+      return [];
+    }
+  } catch (error) {
+    console.error("Error searching facilities with Gemini:", error);
+    return [];
+  }
+}
+
+
 
