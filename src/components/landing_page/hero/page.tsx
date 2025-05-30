@@ -1,5 +1,5 @@
 import ButtonHero from "@/components/button_hero/page";
-import Link from "next/link"; // Import Link
+import Link from "next/link";
 import React from "react";
 
 const Hero = () => {
@@ -22,3 +22,4 @@ const Hero = () => {
 };
 
 export default Hero;
+
