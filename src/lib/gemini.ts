@@ -1,10 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { IFacility, IUser } from "@/types";
 
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) {
-  throw new Error("GEMINI_API_KEY tidak ditemukan di environment variables.");
-}
+const apiKey = process.env.GEMINI_API_KEY ?? "";
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
@@ -145,5 +142,74 @@ export async function findAndStructureNewFacilities(area: string): Promise<Parti
   } catch (error) {
     console.error("Error during Gemini's find and structure call:", error);
     return [];
+  }
+}
+
+type EnrichedData = Partial<Omit<IFacility, "_id" | "createdAt" | "updatedAt">>;
+
+export async function enrichFacilityDataWithGemini(facility: IFacility): Promise<EnrichedData | null> {
+  const prompt: string = `
+      Anda adalah seorang analis data yang bertugas untuk memverifikasi dan memperbarui informasi fasilitas kesehatan.
+      
+      **Tugas Anda:**
+      Lakukan pencarian web mendalam untuk fasilitas kesehatan berikut dan perbarui informasinya. Fokus untuk menemukan data yang lebih baru atau lebih lengkap dari data yang sudah ada.
+
+      **Data Saat Ini di Database:**
+      \`\`\`json
+      ${JSON.stringify(facility, null, 2)}
+      \`\`\`
+
+      **Instruksi Kritis:**
+      1.  Verifikasi semua field dari data yang ada. Jika Anda menemukan informasi yang lebih akurat atau baru (misalnya, nomor telepon atau rating baru), gunakan data baru tersebut.
+      2.  Cari informasi untuk field yang mungkin masih kosong (misalnya \`tariff_min\` atau \`tariff_max\`).
+      3.  Kembalikan hasilnya sebagai **SATU OBJEK JSON TUNGGAL** yang valid dan sesuai dengan struktur interface TypeScript di bawah ini.
+      4.  Jika sebuah field tidak dapat ditemukan atau diverifikasi, jangan sertakan field tersebut di dalam JSON balasan Anda.
+
+      **INTERFACE TYPESCRIPT TARGET (Struktur Output yang Wajib Diikuti):**
+      \`\`\`typescript
+      interface IFacility {
+        name: string;
+        type: "HOSPITAL" | "CLINIC" | "PUSKESMAS";
+        tariff_min?: number;
+        tariff_max?: number;
+        overall_rating?: number;
+        address: string;
+        location: {
+        type: "Point";
+        coordinates: [number, number]; // [longitude, latitude]
+        };
+        phone?: string;
+        services_offered?: string[];
+      }
+      \`\`\`
+
+      **Contoh Output JSON yang Sempurna:**
+      \`\`\`json
+      {
+        "overall_rating": 4.7,
+        "phone": "(0341) 362102",
+        "services_offered": ["IGD", "Rawat Inap", "Poliklinik Spesialis", "Radiologi", "Bedah Sentral", "Farmasi", "Rehabilitasi Medik"]
+      }
+      \`\`\`
+      
+      **PASTIKAN SELURUH OUTPUT ANDA HANYA OBJEK JSON VALID. TIDAK ADA TEKS PEMBUKA, PENUTUP, ATAU PENJELASAN LAIN.**
+    `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    let text = response
+      .text()
+      .replace(/```json|```/g, "")
+      .trim();
+
+    if (text.startsWith("{") && text.endsWith("}")) {
+      return JSON.parse(text) as EnrichedData;
+    }
+    console.error(`Gemini did not return a valid JSON object for ${facility.name}:`, text);
+    return null;
+  } catch (error) {
+    console.error(`Error enriching data for "${facility.name}":`, error);
+    return null;
   }
 }
