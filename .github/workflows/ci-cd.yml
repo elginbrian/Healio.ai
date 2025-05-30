@@ -64,13 +64,12 @@ jobs:
             set -e
             trap 'echo "An error occurred during deployment. Exiting..." && exit 1' ERR
 
-            # Define SCRIPT_BRANCH_NAME directly using GitHub context
             SCRIPT_BRANCH_NAME="${{ github.ref_name }}"
 
             echo "Deploying branch from SCRIPT_BRANCH_NAME: $SCRIPT_BRANCH_NAME"
 
             if [ -z "$SCRIPT_BRANCH_NAME" ]; then
-              echo "Critical Error: SCRIPT_BRANCH_NAME is empty. GitHub context github.ref_name might not be populating as expected."
+              echo "Critical Error: SCRIPT_BRANCH_NAME is empty."
               exit 1
             fi
 
@@ -86,7 +85,6 @@ jobs:
               TARGET_NODE_ENV="development"
             else
               echo "Error: Branch '$SCRIPT_BRANCH_NAME' is not 'master' or 'dev'."
-              echo "This indicates an issue with the workflow logic or github.ref_name evaluation, as the job's 'if' condition should prevent this."
               exit 1
             fi
 
@@ -99,7 +97,9 @@ jobs:
               git clean -fd
               git pull origin $SCRIPT_BRANCH_NAME || git pull
             else
-              echo "Repository not found at $REPO_DIR. Consider cloning it first."
+              echo "Repository not found at $REPO_DIR. Cloning repository..."
+              git clone https://github.com/${{ github.repository }}.git .
+              git checkout $SCRIPT_BRANCH_NAME
             fi
 
             echo "Creating/Updating .env file in $REPO_DIR/.env ..."
@@ -109,15 +109,14 @@ jobs:
             NODE_ENV=${TARGET_NODE_ENV}
             EOF
 
-            export DOCKER_IMAGE_TAG=${IMAGE_TAG}
+            export DOCKER_IMAGE_TAG=${IMAGE_TAG} 
             export APP_CONTAINER_PORT="3000"
             export APP_HOST_PORT=${APP_HOST_PORT}
             export MONGO_HOST_PORT="27017"
             export MONGO_INITDB_DATABASE="healio_db"
             export TARGET_NODE_ENV=${TARGET_NODE_ENV}
             export JWT_SECRET_FOR_COMPOSE="${{ secrets.JWT_SECRET }}"
-            export DOCKER_USERNAME_ENV="${{ secrets.DOCKER_USERNAME }}"
-
+            export DOCKER_USERNAME_ENV="${{ secrets.DOCKER_USERNAME }}" 
 
             echo "Environment variables for docker-compose set."
             echo "DOCKER_USERNAME_ENV=${DOCKER_USERNAME_ENV}"
@@ -125,20 +124,16 @@ jobs:
             echo "APP_HOST_PORT=${APP_HOST_PORT}"
             echo "TARGET_NODE_ENV=${TARGET_NODE_ENV}"
 
-            echo "Logging into Docker Hub on the server..."
-            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
             echo "Stopping and removing old containers and volumes (database will be reset)..."
             docker-compose down -v --remove-orphans || true
 
-            echo "Pulling latest images..."
-            docker-compose pull mongodb
-            docker-compose pull app
+            echo "Pulling base MongoDB image..."
+            docker-compose pull mongodb || true 
+
+            echo "Building images locally on the server..."
+            docker-compose build --no-cache app 
 
             echo "Starting services with docker-compose..."
             docker-compose up -d --force-recreate
-
-            echo "Logging out from Docker Hub on the server..."
-            docker logout || true
 
             echo "Deployment for branch $SCRIPT_BRANCH_NAME completed successfully."
