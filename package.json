@@ -8,8 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "build:cron": "npx tsc src/cron/enrich-facilities.ts --outDir ./dist_cron --module commonjs --esModuleInterop --resolveJsonModule --skipLibCheck --target es2017",
-    "start:cron": "node ./dist_cron/enrich-facilities.js"
+    "build:cron": "npx tsc --project tsconfig.cron.json",
+    "start:cron": "node ./dist_cron/cron/enrich-facilities.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
