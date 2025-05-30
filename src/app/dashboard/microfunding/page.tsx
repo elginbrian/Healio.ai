@@ -1,71 +1,74 @@
-// app/microfunding/page.jsx
 "use client";
 
 import React, { useState } from "react";
 import { PlusSquare, Globe } from "lucide-react";
 import NotifProfile from "@/components/notification_profile/page";
 import FooterDashboard from "@/components/landing_page/footer/footer_dashboard/page";
-import PoolCard from "@/components/microfunding/pool_card/page";
-import JoinPoolForm from "@/components/microfunding/join_pool_form/page";
-import CreatePoolForm from "@/components/microfunding/create_pool_form/page";
-import JoinPoolSuccess from "@/components/microfunding/success_join/page";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import PoolCard from "@/components/pool_card/page";
+import CreatePoolForm from "@/components/dashboard/create-pool-form";
+import JoinPoolForm from "@/components/dashboard/join-pool-form";
 
 const Microfunding = () => {
-  const [showCreatePoolForm, setShowCreatePoolForm] = useState(false); // State to control create pool form visibility
-  const [showJoinPoolForm, setShowJoinPoolForm] = useState(false); // State to control join pool form visibility
-  const [showJoinPoolSuccess, setShowJoinPoolSuccess] = useState(false); // State to control join pool success popup
+  const [showCreatePoolForm, setShowCreatePoolForm] = useState(false);
+  const [showJoinPoolForm, setShowJoinPoolForm] = useState(false);
+  const [showJoinPoolSuccess, setShowJoinPoolSuccess] = useState(false);
+  const router = useRouter();
 
-  const handleCreatePool = () => {
-    console.log("Buat Pool Dana clicked!");
-    setShowCreatePoolForm(true); // Show the create pool form
+  const handleCreatePoolClick = () => {
+    setShowCreatePoolForm(true);
+  };
+  const handleCloseCreatePoolForm = () => {
+    setShowCreatePoolForm(false);
+  };
+  const handlePoolCreated = (newPool: any) => {
+    setShowCreatePoolForm(false);
+    toast.success(`Pool "${newPool.title}" berhasil dibuat! Kode Pool: ${newPool.pool_code}`);
   };
 
-  const handleJoinPool = () => {
-    console.log("Gabung ke Pool Dana clicked!");
-    setShowJoinPoolForm(true); // Show the join pool form
+  const handleJoinPoolClick = () => {
+    setShowJoinPoolForm(true);
   };
-
-  const handleJoinSuccess = () => {
-    setShowJoinPoolForm(false); // Hide join form
-    setShowJoinPoolSuccess(true); // Show success popup
+  const handleCloseJoinPoolForm = () => {
+    setShowJoinPoolForm(false);
   };
-
-  const handleCloseSuccess = () => {
-    setShowJoinPoolSuccess(false); // Hide success popup
+  const handleJoinRequestSuccess = () => {
+    setShowJoinPoolForm(false);
+    setShowJoinPoolSuccess(true);
+  };
+  const handleCloseJoinSuccessModal = () => {
+    setShowJoinPoolSuccess(false);
   };
 
   return (
-    <div className="w-full h-screen flex flex-col pt-8">
-      <div className="w-full flex justify-end mb-8  px-8">
+    <div className="w-full min-h-screen flex flex-col">
+      <div className="w-full flex justify-end mt-8 mb-8 px-8">
         <NotifProfile profileImageSrc="/img/hospital_dummy.png" />
       </div>
 
-      <div className="w-full flex flex-col items-center justify-center flex-grow transform -translate-y-12">
-        <h1 className="text-4xl md:text-5xl font-semibold text-[var(--color-p-300)] text-center mb-6">Selamat Datang di Dana Komunal!</h1>
-        <p className="text-lg md:text-xl text-gray-700 text-center max-w-3xl mb-16 leading-relaxed">
+      <div className="w-full flex flex-col items-center justify-center flex-grow px-4 md:px-0">
+        <h1 className="text-3xl md:text-5xl font-semibold text-[var(--color-p-300)] text-center mb-6">Selamat Datang di Dana Komunal!</h1>
+        <p className="text-base md:text-xl text-gray-700 text-center max-w-3xl mb-12 md:mb-16 leading-relaxed px-4">
           Buat atau gabung ke pool dana untuk saling membantu pendanaan kebutuhan medis. Bersama kita bisa memberikan dukungan finansial untuk kesehatan yang lebih baik.
         </p>
 
-        <div className="flex flex-col md:flex-row gap-8 w-full max-w-5xl">
-          <PoolCard icon={PlusSquare} title="Buat Pool Dana" description="Mulai pool dana baru untuk kebutuhan medis dan undang anggota komunitas untuk berpartisipasi." buttonText="Buat Pool Dana" onClick={handleCreatePool} />
+        <div className="flex flex-col md:flex-row gap-8 w-full max-w-xl md:max-w-5xl px-4 md:px-0">
+          <PoolCard icon={PlusSquare} title="Buat Pool Dana" description="Mulai pool dana baru untuk kebutuhan medis dan undang anggota komunitas untuk berpartisipasi." buttonText="Buat Pool Dana" onClick={handleCreatePoolClick} />
 
-          <PoolCard icon={Globe} title="Gabung ke Pool Dana" description="Masukkan kode undangan untuk bergabung dengan pool dana yang sudah ada." buttonText="Gabung ke Pool Dana" onClick={handleJoinPool} />
+          <PoolCard icon={Globe} title="Gabung ke Pool Dana" description="Masukkan kode undangan untuk bergabung dengan pool dana yang sudah ada." buttonText="Gabung ke Pool Dana" onClick={handleJoinPoolClick} />
         </div>
       </div>
-      <div>
+      <div className="mt-auto">
         <FooterDashboard />
       </div>
 
-      {/* Conditionally render the CreatePoolForm */}
-      {showCreatePoolForm && <CreatePoolForm onClose={() => setShowCreatePoolForm(false)} />}
+      {showCreatePoolForm && <CreatePoolForm onClose={handleCloseCreatePoolForm} onPoolCreated={handlePoolCreated} />}
 
-      {/* Conditionally render the JoinPoolForm */}
-      {showJoinPoolForm && <JoinPoolForm onClose={() => setShowJoinPoolForm(false)} onSuccess={handleJoinSuccess} />}
-
-      {/* Conditionally render the JoinPoolSuccess */}
-      {showJoinPoolSuccess && <JoinPoolSuccess onClose={handleCloseSuccess} />}
+      {showJoinPoolForm && <JoinPoolForm onClose={handleCloseJoinPoolForm} onSuccess={handleJoinRequestSuccess} />}
     </div>
   );
 };
 
 export default Microfunding;
+

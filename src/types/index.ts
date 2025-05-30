@@ -10,3 +10,4 @@ export * from "./microfunding-pool";
 export * from "./pool-member";
 export * from "./contribution";
 export * from "./disbursement";
+export * from "./join-request";
