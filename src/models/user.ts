@@ -23,54 +23,54 @@ const userSchema = new Schema<IUser>(
     },
     age: {
       type: Number,
-      required: [true, "Umur wajib diisi"],
+      default: 25,
     },
     gender: {
       type: String,
       enum: Object.values(Gender),
-      required: [true, "Jenis kelamin wajib diisi"],
+      default: Gender.MALE,
     },
     phone: {
       type: String,
+      default: "",
     },
     ktp_number: {
       type: String,
       unique: true,
       sparse: true,
-      required: [true, "Nomor KTP wajib diisi"],
+      default: "",
     },
     address: {
       type: String,
-      required: [true, "Alamat wajib diisi"],
+      default: "Belum diisi",
     },
     bpjs_status: {
       type: Boolean,
       default: false,
-      required: [true, "Status BPJS wajib diisi"],
     },
     employment_status: {
       type: String,
-      required: [true, "Status pekerjaan wajib diisi"],
+      default: "Belum diisi",
     },
     income_level: {
       type: Number,
-      required: [true, "Tingkat pendapatan wajib diisi"],
+      default: 0,
     },
     education_level: {
       type: String,
-      required: [true, "Tingkat pendidikan wajib diisi"],
+      default: "Belum diisi",
     },
     chronic_conditions: {
       type: String,
-      required: [true, "Kondisi kronis wajib diisi (isi 'Tidak ada' jika tidak memiliki)"],
+      default: "Tidak ada",
     },
     max_budget: {
       type: Number,
-      required: [true, "Preferensi maksimal budget wajib diisi"],
+      default: 500000,
     },
     max_distance_km: {
       type: Number,
-      required: [true, "Preferensi maksimal jarak wajib diisi"],
+      default: 10,
     },
 
     perusahaan: {

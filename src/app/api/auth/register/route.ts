@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db";
 import bcrypt from "bcryptjs";
 import User from "@/models/user";
+import { Gender } from "@/types/enums";
 
 export async function POST(request: Request) {
   try {
