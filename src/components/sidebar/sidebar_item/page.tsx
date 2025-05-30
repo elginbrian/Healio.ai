@@ -12,7 +12,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ active, onClick, activeSrc, i
   return (
     <div
       onClick={onClick}
-      className={`w-16 h-16 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300 ${
+      className={`mb-4 w-14 h-14 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300 ${
         active ? 'bg-[var(--color-p-300)]' : 'bg-gray-100'
       }`}
     >
