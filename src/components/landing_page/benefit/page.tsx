@@ -3,8 +3,8 @@ import React from 'react'
 
 const Benefit = () => {
     return (
-        <div className='flex flex-col justify-center items-center'>
-            <p className="text-6xl text-[var(--color-p-300)] font-semibold mb-12 text-center">
+        <div className='flex flex-col justify-center items-center pb-48'>
+            <p className="text-5xl text-[var(--color-p-300)] font-semibold mb-12 text-center">
                 Fitur Healio.ai
             </p>
             <div className='flex'>
