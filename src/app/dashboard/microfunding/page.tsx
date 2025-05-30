@@ -66,8 +66,6 @@ const Microfunding = () => {
       {showCreatePoolForm && <CreatePoolForm onClose={handleCloseCreatePoolForm} onPoolCreated={handlePoolCreated} />}
 
       {showJoinPoolForm && <JoinPoolForm onClose={handleCloseJoinPoolForm} onSuccess={handleJoinRequestSuccess} />}
-
-
     </div>
   );
 };
