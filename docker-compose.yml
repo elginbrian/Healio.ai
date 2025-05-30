@@ -13,7 +13,7 @@ services:
       - healio_ai_network
 
   app:
-    image: ${DOCKER_USERNAME_ENV}/healio-ai-app
+    image: ${DOCKER_USERNAME:-username}/healio-ai-app:${DOCKER_IMAGE_TAG:-latest}
     container_name: healio_ai_app
     restart: unless-stopped
     ports:
@@ -24,10 +24,6 @@ services:
       - JWT_SECRET=${JWT_SECRET_FOR_COMPOSE}
     depends_on:
       - mongodb
-    volumes:
-      - ./:/app
-      - /app/node_modules
-      - /app/.next
     networks:
       - healio_ai_network
 
