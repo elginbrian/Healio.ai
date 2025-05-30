@@ -73,7 +73,7 @@ function LoginForm() {
         </div>
 
         <div className="flex flex-col h-full w-full items-center justify-center p-8 lg:w-1/2 overflow-hidden">
-          <div className="w-full max-w-md overflow-y-auto max-h-full">
+          <div className="w-full max-w-md max-h-full">
             <div className="mb-8 flex justify-center">
               <img src="/img/logo.svg" alt="Healio.ai Logo" className="h-24 w-24" />
             </div>
