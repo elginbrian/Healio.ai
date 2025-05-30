@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./dist_cron",
+    "module": "commonjs"
+  },
+  "include": ["src/cron/**/*.ts", "src/lib/gemini.ts", "src/lib/db.ts", "src/models/facility.ts", "src/types/**/*.ts"],
+  "exclude": ["node_modules", ".next", "dist_cron", "src/app", "src/components", "src/pages"]
+}
