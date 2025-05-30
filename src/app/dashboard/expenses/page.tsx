@@ -8,22 +8,33 @@ import TotalExpenseCard from '@/components/expenses/total_expense/page';
 import UploadReceipt from '@/components/expenses/upload_reciept/page';
 import FooterDashboard from '@/components/landing_page/footer/footer_dashboard/page';
 import React from 'react';
+
 const Expense = () => {
   return (
-    <div className='w-full min-h-screen flex flex-col p-8'>
-      <ExpenseHeader />
-      <div className='flex-grow flex flex-col md:flex-row gap-8 pb-8'>
-        <div className='flex flex-col w-full md:w-5/12'>
-          <TotalExpenseCard />
-          <UploadReceipt />
-          <AIRecommendation />
-        </div>
-        <div className='flex flex-col w-7/12'>
-          <Timeline />
-          <RecentExpenses />
+    <div className='flex flex-col min-h-screen'>
+      <div className='flex-grow px-6 pt-8 md:px-10 pb-20 overflow-y-auto'>
+        <ExpenseHeader />
+
+        <div className='grid grid-cols-1 lg:grid-cols-12 gap-6 mb-16'>
+
+          <div className='lg:col-span-5 flex flex-col gap-6'>
+            <TotalExpenseCard />
+            <UploadReceipt />
+            <AIRecommendation />
+          </div>
+
+
+          <div className='lg:col-span-7 flex flex-col gap-6'>
+            <Timeline />
+            <RecentExpenses />
+          </div>
         </div>
       </div>
-      <FooterDashboard />
+
+
+      <div className='mt-auto'>
+        <FooterDashboard />
+      </div>
     </div>
   );
 };

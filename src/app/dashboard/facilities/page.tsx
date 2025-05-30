@@ -73,7 +73,6 @@ const Facilities = () => {
 
   const facilitiesNearby = [...facilitiesForYou];
 
-  // Simplified scrolling implementation
   const scrollContainer = (containerId: string, direction: "left" | "right") => {
     const container = document.getElementById(containerId);
     if (container) {
@@ -90,14 +89,14 @@ const Facilities = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <div className="flex-grow px-6 pt-8 md:px-10 pb-20 overflow-y-auto">
-        {/* Header with search and profile */}
+
         <div className="flex justify-between items-center mb-8">
           <SearchField />
           <NotifProfile profileImageSrc={"/img/hospital_dummy.png"} />
         </div>
 
-        {/* Facilities for you section */}
-        <div className="mb-16">
+
+        <div className="mb-4">
           <div className="flex items-center justify-between mb-6">
             <p className="text-[var(--color-p-300)] font-semibold text-3xl">Fasilitas untuk Anda</p>
             <div className="hidden md:flex items-center gap-2">
@@ -110,13 +109,13 @@ const Facilities = () => {
             </div>
           </div>
 
-          {/* Scrollable container with responsive sizing */}
+
           <div className="relative">
             <div id="facilities-for-you" className="flex overflow-x-auto pb-8 hide-scrollbar" style={{ scrollSnapType: "x mandatory" }}>
               <div className="flex gap-6 pl-0.5 pr-6">
                 {facilitiesForYou.map((facility, index) => (
                   <div key={index} className="flex-shrink-0 w-[280px] sm:w-[300px] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)]" style={{ scrollSnapAlign: "start" }}>
-                    <div className="bg-white rounded-xl overflow-hidden shadow-sm h-full">
+                    <div className="bg-white rounded-xl shadow-md h-full overflow-hidden">
                       <FacilityCard {...facility} />
                     </div>
                   </div>
@@ -126,8 +125,8 @@ const Facilities = () => {
           </div>
         </div>
 
-        {/* Facilities nearby section */}
-        <div className="mb-16">
+
+        <div className="mb-4">
           <div className="flex items-center justify-between mb-6">
             <p className="text-[var(--color-p-300)] font-semibold text-3xl">Fasilitas di Sekitar Anda</p>
             <div className="hidden md:flex items-center gap-2">
@@ -140,7 +139,7 @@ const Facilities = () => {
             </div>
           </div>
 
-          {/* Scrollable container with responsive sizing */}
+
           <div className="relative">
             <div id="facilities-nearby" className="flex overflow-x-auto pb-8 hide-scrollbar" style={{ scrollSnapType: "x mandatory" }}>
               <div className="flex gap-6 pl-0.5 pr-6">
@@ -157,7 +156,7 @@ const Facilities = () => {
         </div>
       </div>
 
-      {/* Footer positioned at the bottom */}
+
       <div className="mt-auto">
         <FooterDashboard />
       </div>
@@ -166,3 +165,4 @@ const Facilities = () => {
 };
 
 export default Facilities;
+
