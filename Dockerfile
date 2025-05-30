@@ -1,4 +1,4 @@
-FROM node:18-alpine AS builder
+FROM node:18-slim AS builder
 WORKDIR /app
 
 COPY package*.json ./
@@ -10,7 +10,7 @@ ENV NODE_ENV="production"
 
 RUN npm run build
 
-FROM node:18-alpine AS runner
+FROM node:18-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV="production"
