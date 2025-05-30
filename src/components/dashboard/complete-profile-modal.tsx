@@ -1,27 +1,12 @@
 "use client";
 
-import React, { useState, FormEvent, ChangeEvent } from "react";
+import React, { useState, FormEvent, ChangeEvent, useEffect } from "react";
 import { Info, X } from "lucide-react";
 
 import Step1InformasiDasar from "./step-1-modal";
 import Step2VerifikasiKTP from "./step-2-modal";
 import Step3PekerjaanPendapatan from "./step-3-modal";
 import Step4AlamatKesehatan from "./step-4-modal";
-
-interface ProfileCompletionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmitForm: (data: { step: number; formData: any; isFinalStep: boolean }) => void;
-  onGoToPreviousStep?: () => void;
-  currentStep?: number;
-  totalSteps?: number;
-  initialEmail?: string;
-  initialNik?: string;
-  initialStep1Data?: Partial<Step1Data>;
-  initialStep2Data?: Partial<Step2Data>;
-  initialStep3Data?: Partial<Step3Data>;
-  initialStep4Data?: Partial<Step4Data>;
-}
 
 interface Step1Data {
   fullName: string;
@@ -52,6 +37,25 @@ interface Step4Data {
   provinsi: string;
   riwayatKesehatan: string;
   persetujuanAnalisisData: boolean;
+  bpjs_status: boolean;
+  education_level: string;
+  max_budget: string;
+  max_distance_km: string;
+}
+
+interface ProfileCompletionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmitForm: (data: { step: number; formData: any; isFinalStep: boolean }) => void;
+  onGoToPreviousStep?: () => void;
+  currentStep?: number;
+  totalSteps?: number;
+  initialEmail?: string;
+  initialNik?: string;
+  initialStep1Data?: Partial<Step1Data>;
+  initialStep2Data?: Partial<Step2Data>;
+  initialStep3Data?: Partial<Step3Data>;
+  initialStep4Data?: Partial<Step4Data>;
 }
 
 const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
@@ -98,7 +102,58 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     provinsi: initialStep4Data?.provinsi || "",
     riwayatKesehatan: initialStep4Data?.riwayatKesehatan || "",
     persetujuanAnalisisData: initialStep4Data?.persetujuanAnalisisData || false,
+    bpjs_status: initialStep4Data?.bpjs_status || false,
+    education_level: initialStep4Data?.education_level || "",
+    max_budget: initialStep4Data?.max_budget || "0",
+    max_distance_km: initialStep4Data?.max_distance_km || "10",
   });
+
+  useEffect(() => {
+    setStep1Data({
+      fullName: initialStep1Data?.fullName || "",
+      email: initialStep1Data?.email || initialEmail,
+      phone: initialStep1Data?.phone || "",
+      dob: initialStep1Data?.dob || "",
+      gender: initialStep1Data?.gender || "",
+    });
+  }, [initialStep1Data, initialEmail]);
+
+  useEffect(() => {
+    setStep2Data({
+      nik: initialStep2Data?.nik || initialNik,
+      ktpImage: initialStep2Data?.ktpImage || null,
+    });
+    if (initialStep2Data?.ktpImage) {
+    } else {
+      setKtpImagePreview(null);
+    }
+  }, [initialStep2Data, initialNik]);
+
+  useEffect(() => {
+    setStep3Data({
+      pekerjaan: initialStep3Data?.pekerjaan || "",
+      perusahaan: initialStep3Data?.perusahaan || "",
+      lamaBekerjaJumlah: initialStep3Data?.lamaBekerjaJumlah || "",
+      lamaBekerjaSatuan: initialStep3Data?.lamaBekerjaSatuan || "BULAN",
+      pendapatanBulanan: initialStep3Data?.pendapatanBulanan || "",
+      sumberPendapatanLain: initialStep3Data?.sumberPendapatanLain || "",
+    });
+  }, [initialStep3Data]);
+
+  useEffect(() => {
+    setStep4Data({
+      alamatLengkap: initialStep4Data?.alamatLengkap || "",
+      kotaKabupaten: initialStep4Data?.kotaKabupaten || "",
+      kodePos: initialStep4Data?.kodePos || "",
+      provinsi: initialStep4Data?.provinsi || "",
+      riwayatKesehatan: initialStep4Data?.riwayatKesehatan || "",
+      persetujuanAnalisisData: initialStep4Data?.persetujuanAnalisisData || false,
+      bpjs_status: initialStep4Data?.bpjs_status || false,
+      education_level: initialStep4Data?.education_level || "",
+      max_budget: initialStep4Data?.max_budget || "0",
+      max_distance_km: initialStep4Data?.max_distance_km || "10",
+    });
+  }, [initialStep4Data]);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -114,7 +169,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     } else if (step === 3) {
       setStep3Data((prev) => ({ ...prev, [field]: value as string }));
     } else if (step === 4) {
-      setStep4Data((prev) => ({ ...prev, [field]: value as string | boolean }));
+      setStep4Data((prev) => ({ ...prev, [field]: value as string | boolean | number }));
     }
   };
 
@@ -144,7 +199,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   const handleSubmitCurrentStepOrProfile = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     let formDataForCurrentStep;
     if (currentStep === 1) {
@@ -154,13 +209,18 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     } else if (currentStep === 3) {
       formDataForCurrentStep = step3Data;
     } else if (currentStep === 4) {
-      formDataForCurrentStep = step4Data;
+      formDataForCurrentStep = {
+        ...step4Data,
+        max_budget: parseInt(step4Data.max_budget, 10) || 0,
+        max_distance_km: parseInt(step4Data.max_distance_km, 10) || 0,
+      };
     }
 
     const isFinal = currentStep === totalSteps;
     onSubmitForm({ step: currentStep, formData: formDataForCurrentStep, isFinalStep: isFinal });
-    setIsLoading(false);
-
+    if (!isFinal) {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -205,7 +265,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 backdrop-blur-sm p-4 transition-opacity duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-4 transition-opacity duration-300">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="bg-[var(--color-p-300)] text-white p-6">
           <div className="flex justify-between items-center mb-3">
@@ -240,4 +300,3 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 };
 
 export default ProfileCompletionModal;
-

@@ -9,16 +9,27 @@ export interface IUser {
   gender: Gender;
   phone: string;
   ktp_number: string;
-  bpjs_status: boolean;
   address: string;
+  bpjs_status: boolean;
+  employment_status: string;
+  income_level: number;
+  education_level: string;
+  chronic_conditions: string;
+  max_budget: number;
+  max_distance_km: number;
+
+  perusahaan?: string;
+  lamaBekerjaJumlah?: string;
+  lamaBekerjaSatuan?: string;
+  sumberPendapatanLain?: string;
+  kotaKabupaten?: string;
+  kodePos?: string;
+  provinsi?: string;
+  persetujuanAnalisisData?: boolean;
+
   latitude?: number;
   longitude?: number;
-  chronic_conditions?: string;
-  income_level?: number;
-  employment_status?: string;
-  education_level?: string;
-  max_budget?: number;
-  max_distance_km?: number;
   createdAt: string;
   updatedAt: string;
 }
+
