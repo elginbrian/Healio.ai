@@ -41,3 +41,24 @@ export enum PaymentMethod {
   E_WALLET = "E_WALLET",
   CASH = "CASH",
 }
+
+export enum PoolMemberRole {
+  ADMIN = "ADMIN",
+  MEMBER = "MEMBER",
+}
+
+export enum JoinRequestStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+}
+
+export enum ContributionPeriod {
+  MONTHLY = "BULANAN",
+  WEEKLY = "MINGGUAN",
+  ANNUALLY = "TAHUNAN",
+}
+
+export enum ClaimApprovalSystem {
+  VOTING_50_PERCENT = "VOTING_50_PERCENT",
+}
