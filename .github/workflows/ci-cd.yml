@@ -55,8 +55,6 @@ jobs:
     steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          SCRIPT_BRANCH_NAME: ${{ github.ref_name }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
@@ -65,6 +63,9 @@ jobs:
           script: |
             set -e
             trap 'echo "An error occurred during deployment. Exiting..." && exit 1' ERR
+
+            # Define SCRIPT_BRANCH_NAME directly using GitHub context
+            SCRIPT_BRANCH_NAME="${{ github.ref_name }}"
 
             echo "Deploying branch from SCRIPT_BRANCH_NAME: $SCRIPT_BRANCH_NAME"
 
