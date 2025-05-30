@@ -1,10 +1,13 @@
-import SearchField from '@/components/search_field/page';
-import FacilityCard from '@/components/facility_card/page';
-import React from 'react';
-import FooterDashboard from '@/components/landing_page/footer/footer_dashboard/page';
-import NotifProfile from '@/components/notification_profile/page';
+"use client";
 
-const Expense = () => {
+import SearchField from "@/components/search_field/page";
+import FacilityCard from "@/components/facility_card/page";
+import React from "react";
+import FooterDashboard from "@/components/landing_page/footer/footer_dashboard/page";
+import NotifProfile from "@/components/notification_profile/page";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const Facilities = () => {
   const facilitiesForYou = [
     {
       imageSrc: "/img/hospital_dummy.png",
@@ -68,25 +71,54 @@ const Expense = () => {
     },
   ];
 
-  const facilitiesNearby = [...facilitiesForYou]; 
+  const facilitiesNearby = [...facilitiesForYou];
+
+  // Simplified scrolling implementation
+  const scrollContainer = (containerId: string, direction: "left" | "right") => {
+    const container = document.getElementById(containerId);
+    if (container) {
+      const scrollAmount = 350;
+      const scrollPosition = direction === "left" ? container.scrollLeft - scrollAmount : container.scrollLeft + scrollAmount;
+
+      container.scrollTo({
+        left: scrollPosition,
+        behavior: "smooth",
+      });
+    }
+  };
 
   return (
-    <div className='w-full min-h-screen flex flex-col'>
-      <div className='flex-grow px-4 pt-8 md:px-10 overflow-y-auto'> 
-        <div className='flex justify-between items-center'>
+    <div className="flex flex-col min-h-screen">
+      <div className="flex-grow px-6 pt-8 md:px-10 pb-20 overflow-y-auto">
+        {/* Header with search and profile */}
+        <div className="flex justify-between items-center mb-8">
           <SearchField />
-          <NotifProfile profileImageSrc={'/img/hospital_dummy.png'} />
+          <NotifProfile profileImageSrc={"/img/hospital_dummy.png"} />
         </div>
-        <div>
-          <p className="text-[var(--color-p-300)] font-semibold text-3xl mt-8">
-            Fasilitas untuk Anda
-          </p>
-          <div className="mt-6 -mx-4 md:-mx-10">
-            <div className="overflow-x-auto pb-4 px-4 md:px-10 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-black/10 [&::-webkit-scrollbar-track]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--color-p-300)] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb:hover]:bg-[var(--color-p-400)] scrollbar-thin scrollbar-thumb-[var(--color-p-300)] scrollbar-track-black/10">
-              <div className="flex gap-6 w-max">
+
+        {/* Facilities for you section */}
+        <div className="mb-16">
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-[var(--color-p-300)] font-semibold text-3xl">Fasilitas untuk Anda</p>
+            <div className="hidden md:flex items-center gap-2">
+              <button onClick={() => scrollContainer("facilities-for-you", "left")} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                <ChevronLeft className="w-5 h-5 text-[var(--color-p-300)]" />
+              </button>
+              <button onClick={() => scrollContainer("facilities-for-you", "right")} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                <ChevronRight className="w-5 h-5 text-[var(--color-p-300)]" />
+              </button>
+            </div>
+          </div>
+
+          {/* Scrollable container with responsive sizing */}
+          <div className="relative">
+            <div id="facilities-for-you" className="flex overflow-x-auto pb-8 hide-scrollbar" style={{ scrollSnapType: "x mandatory" }}>
+              <div className="flex gap-6 pl-0.5 pr-6">
                 {facilitiesForYou.map((facility, index) => (
-                  <div key={index} className="flex-shrink-0">
-                    <FacilityCard {...facility} />
+                  <div key={index} className="flex-shrink-0 w-[280px] sm:w-[300px] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)]" style={{ scrollSnapAlign: "start" }}>
+                    <div className="bg-white rounded-xl overflow-hidden shadow-sm h-full">
+                      <FacilityCard {...facility} />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -94,16 +126,29 @@ const Expense = () => {
           </div>
         </div>
 
-        <div className="">
-          <p className="text-[var(--color-p-300)] font-semibold text-3xl mt-8">
-            Fasilitas di Sekitar Anda
-          </p>
-          <div className="mt-6 -mx-4 md:-mx-10">
-            <div className="overflow-x-auto pb-4 px-4 md:px-10 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-black/10 [&::-webkit-scrollbar-track]:rounded-sm [&::-webkit-scrollbar-thumb]:bg-[var(--color-p-300)] [&::-webkit-scrollbar-thumb]:rounded-sm [&::-webkit-scrollbar-thumb:hover]:bg-[var(--color-p-400)] scrollbar-thin scrollbar-thumb-[var(--color-p-300)] scrollbar-track-black/10">
-              <div className="flex gap-6 w-max">
+        {/* Facilities nearby section */}
+        <div className="mb-16">
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-[var(--color-p-300)] font-semibold text-3xl">Fasilitas di Sekitar Anda</p>
+            <div className="hidden md:flex items-center gap-2">
+              <button onClick={() => scrollContainer("facilities-nearby", "left")} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                <ChevronLeft className="w-5 h-5 text-[var(--color-p-300)]" />
+              </button>
+              <button onClick={() => scrollContainer("facilities-nearby", "right")} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                <ChevronRight className="w-5 h-5 text-[var(--color-p-300)]" />
+              </button>
+            </div>
+          </div>
+
+          {/* Scrollable container with responsive sizing */}
+          <div className="relative">
+            <div id="facilities-nearby" className="flex overflow-x-auto pb-8 hide-scrollbar" style={{ scrollSnapType: "x mandatory" }}>
+              <div className="flex gap-6 pl-0.5 pr-6">
                 {facilitiesNearby.map((facility, index) => (
-                  <div key={`nearby-${index}`} className="flex-shrink-0">
-                    <FacilityCard {...facility} />
+                  <div key={`nearby-${index}`} className="flex-shrink-0 w-[280px] sm:w-[300px] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)]" style={{ scrollSnapAlign: "start" }}>
+                    <div className="bg-white rounded-xl overflow-hidden shadow-sm h-full">
+                      <FacilityCard {...facility} />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -111,10 +156,13 @@ const Expense = () => {
           </div>
         </div>
       </div>
-      
-      <FooterDashboard />
+
+      {/* Footer positioned at the bottom */}
+      <div className="mt-auto">
+        <FooterDashboard />
+      </div>
     </div>
   );
 };
 
-export default Expense;
+export default Facilities;
