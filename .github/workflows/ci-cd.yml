@@ -120,10 +120,13 @@ jobs:
 
 
             echo "Environment variables for docker-compose set."
-            echo "DOCKER_USERNAME_ENV=${DOCKER_USERNAME_ENV}" # Pastikan ini diekspor
+            echo "DOCKER_USERNAME_ENV=${DOCKER_USERNAME_ENV}"
             echo "DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}"
             echo "APP_HOST_PORT=${APP_HOST_PORT}"
             echo "TARGET_NODE_ENV=${TARGET_NODE_ENV}"
+
+            echo "Logging into Docker Hub on the server..."
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
             echo "Stopping and removing old containers and volumes (database will be reset)..."
             docker-compose down -v --remove-orphans || true
@@ -134,5 +137,8 @@ jobs:
 
             echo "Starting services with docker-compose..."
             docker-compose up -d --force-recreate
+
+            echo "Logging out from Docker Hub on the server..."
+            docker logout || true
 
             echo "Deployment for branch $SCRIPT_BRANCH_NAME completed successfully."
