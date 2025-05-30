@@ -114,7 +114,7 @@ jobs:
             export APP_HOST_PORT=${APP_HOST_PORT}
             export MONGO_HOST_PORT="27017"
             export MONGO_INITDB_DATABASE="healio_db"
-            export TARGET_NODE_ENV=${TARGET_NODE_ENV}
+            export TARGET_NODE_ENV="development"
             export JWT_SECRET_FOR_COMPOSE="${{ secrets.JWT_SECRET }}"
             export DOCKER_USERNAME_ENV="${{ secrets.DOCKER_USERNAME }}"
             export GEMINI_API_KEY_FOR_COMPOSE="${{ secrets.GEMINI_API_KEY }}"
