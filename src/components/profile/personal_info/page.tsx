@@ -1,182 +1,260 @@
-'use client';
-import React, { useState } from 'react';
+"use client";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth";
+import api from "@/lib/api";
+import toast from "react-hot-toast";
+import { Gender } from "@/types/enums";
 
 export interface PersonalInfoProps {
   isEditMode: boolean;
   setIsEditMode: (isEdit: boolean) => void;
 }
 
-export interface PersonalInfoFormData {
-  namaLengkap: string;
-  email: string;
-  nomorTelepon: string;
-  tanggalLahir: string;
-  jenisKelamin: string;
-  nik: string;
-  alamatLengkap: string;
-  provinsi: string;
-  kota: string;
-  kodePos: string;
-}
-
-export interface InfoProps {
-  label: string;
-  value: string;
-}
-
-export interface InputFieldProps {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}
-
-export interface SelectFieldProps {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}
-
-
-const Info: React.FC<InfoProps> = ({ label, value }) => (
-  <div className="flex flex-col">
-    <span className="text-gray-500 text-sm">{label}</span>
-    <span className="text-gray-800 font-medium text-lg">{value}</span>
-  </div>
-);
-
-const InputField: React.FC<InputFieldProps> = ({ label, value, onChange }) => (
-  <div className="flex flex-col">
-    <label className="text-gray-500 text-sm mb-1">{label}</label>
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-p-300)] focus:border-transparent"
-    />
-  </div>
-);
-
-const SelectField: React.FC<SelectFieldProps> = ({ label, value, options, onChange }) => (
-  <div className="flex flex-col">
-    <label className="text-gray-500 text-sm mb-1">{label}</label>
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-p-300)] focus:border-transparent"
-    >
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  </div>
-);
-
 const PersonalInfo: React.FC<PersonalInfoProps> = ({ isEditMode, setIsEditMode }) => {
-  const [formData, setFormData] = useState<PersonalInfoFormData>({
-    namaLengkap: 'Johan Arizona',
-    email: 'johanariz@gmail.com',
-    nomorTelepon: '+6281234567890',
-    tanggalLahir: '15 Agustus 1985',
-    jenisKelamin: 'Laki-laki',
-    nik: '3201011508850001',
-    alamatLengkap: 'Jl. Merdeka No. 123, RT 05/RW 02',
-    provinsi: 'DKI Jakarta',
-    kota: 'Jakarta Selatan',
-    kodePos: '64151'
+  const { user, login, token } = useAuth();
+
+  const [formData, setFormData] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    age: user?.age || 0,
+    gender: user?.gender || Gender.MALE,
+    ktp_number: user?.ktp_number || "",
+    address: user?.address || "",
+    bpjs_status: user?.bpjs_status || false,
+    education_level: user?.education_level || "",
+    chronic_conditions: user?.chronic_conditions || "",
+    max_budget: user?.max_budget || 0,
+    max_distance_km: user?.max_distance_km || 10,
   });
 
-  const handleInputChange = (field: keyof PersonalInfoFormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        age: user.age || 0,
+        gender: user.gender || Gender.MALE,
+        ktp_number: user.ktp_number || "",
+        address: user.address || "",
+        bpjs_status: user.bpjs_status || false,
+        education_level: user.education_level || "",
+        chronic_conditions: user.chronic_conditions || "",
+        max_budget: user.max_budget || 0,
+        max_distance_km: user.max_distance_km || 10,
+      });
+    }
+  }, [user]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+
+    if (type === "checkbox") {
+      const checkbox = e.target as HTMLInputElement;
+      setFormData({
+        ...formData,
+        [name]: checkbox.checked,
+      });
+    } else if (type === "number") {
+      setFormData({
+        ...formData,
+        [name]: parseInt(value, 10) || 0,
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
   };
 
-  const handleSave = () => {
-    console.log("Saving data:", formData);
-    setIsEditMode(false);
+  const handleSave = async () => {
+    try {
+      const response = await api.patch("/api/users/profile", formData);
+
+      if (response.status === 200) {
+        toast.success("Informasi pribadi berhasil diperbarui");
+        setIsEditMode(false);
+
+        if (token) {
+          login(token);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Gagal memperbarui informasi pribadi");
+    }
   };
 
   const handleCancel = () => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        age: user.age || 0,
+        gender: user.gender || Gender.MALE,
+        ktp_number: user.ktp_number || "",
+        address: user.address || "",
+        bpjs_status: user.bpjs_status || false,
+        education_level: user.education_level || "",
+        chronic_conditions: user.chronic_conditions || "",
+        max_budget: user.max_budget || 0,
+        max_distance_km: user.max_distance_km || 10,
+      });
+    }
     setIsEditMode(false);
   };
 
-  if (isEditMode) {
-    return (
-      <>
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-          <h2 className="text-[var(--color-p-300)] text-xl md:text-2xl font-bold mb-6">Informasi Pribadi</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-            <InputField label="Nama Lengkap" value={formData.namaLengkap} onChange={(value) => handleInputChange('namaLengkap', value)} />
-            <InputField label="Email" value={formData.email} onChange={(value) => handleInputChange('email', value)} />
-            <InputField label="Nomor Telepon" value={formData.nomorTelepon} onChange={(value) => handleInputChange('nomorTelepon', value)} />
-            <InputField label="Tanggal Lahir" value={formData.tanggalLahir} onChange={(value) => handleInputChange('tanggalLahir', value)} />
-            <SelectField
-              label="Jenis Kelamin"
-              value={formData.jenisKelamin}
-              options={['Laki-laki', 'Perempuan']}
-              onChange={(value) => handleInputChange('jenisKelamin', value)}
+  return (
+    <div className="bg-white rounded-lg shadow-sm p-6">
+      <h2 className="text-xl font-semibold text-gray-800 mb-6">Informasi Pribadi</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+          {isEditMode ? <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md" required /> : <p className="text-gray-800">{user?.name || "-"}</p>}
+        </div>
+
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <p className="text-gray-800">{user?.email || "-"}</p>
+        </div>
+
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
+          {isEditMode ? <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md" /> : <p className="text-gray-800">{user?.phone || "-"}</p>}
+        </div>
+
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Usia</label>
+          {isEditMode ? <input type="number" name="age" value={formData.age} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required /> : <p className="text-gray-800">{user?.age || "-"}</p>}
+        </div>
+
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
+          {isEditMode ? (
+            <select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+              <option value={Gender.MALE}>Laki-laki</option>
+              <option value={Gender.FEMALE}>Perempuan</option>
+            </select>
+          ) : (
+            <p className="text-gray-800">{user?.gender === Gender.MALE ? "Laki-laki" : user?.gender === Gender.FEMALE ? "Perempuan" : "-"}</p>
+          )}
+        </div>
+
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nomor KTP</label>
+          {isEditMode ? (
+            <input type="text" name="ktp_number" value={formData.ktp_number} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md" maxLength={16} pattern="[0-9]{16}" required />
+          ) : (
+            <p className="text-gray-800">{user?.ktp_number || "-"}</p>
+          )}
+        </div>
+
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+          {isEditMode ? <textarea name="address" value={formData.address} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md" rows={3} required /> : <p className="text-gray-800">{user?.address || "-"}</p>}
+        </div>
+
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Status BPJS</label>
+          {isEditMode ? (
+            <select
+              name="bpjs_status"
+              value={formData.bpjs_status ? "true" : "false"}
+              onChange={(e) => setFormData({ ...formData, bpjs_status: e.target.value === "true" })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              required
+            >
+              <option value="false">Tidak Memiliki</option>
+              <option value="true">Memiliki</option>
+            </select>
+          ) : (
+            <p className="text-gray-800">{user?.bpjs_status ? "Memiliki" : "Tidak Memiliki"}</p>
+          )}
+        </div>
+
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Tingkat Pendidikan</label>
+          {isEditMode ? (
+            <select name="education_level" value={formData.education_level} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+              <option value="">Pilih Tingkat Pendidikan</option>
+              <option value="SD">SD</option>
+              <option value="SMP">SMP</option>
+              <option value="SMA/SMK">SMA/SMK</option>
+              <option value="Diploma">Diploma</option>
+              <option value="Sarjana">Sarjana</option>
+              <option value="Magister">Magister</option>
+              <option value="Doktor">Doktor</option>
+            </select>
+          ) : (
+            <p className="text-gray-800">{user?.education_level || "-"}</p>
+          )}
+        </div>
+
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Kondisi Kesehatan Kronis</label>
+          {isEditMode ? (
+            <textarea
+              name="chronic_conditions"
+              value={formData.chronic_conditions}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              rows={3}
+              placeholder="Tuliskan kondisi kesehatan kronis atau 'Tidak ada' jika tidak memiliki"
+              required
             />
-            <InputField label="NIK" value={formData.nik} onChange={(value) => handleInputChange('nik', value)} />
-          </div>
+          ) : (
+            <p className="text-gray-800">{user?.chronic_conditions || "-"}</p>
+          )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-[var(--color-p-300)] text-xl md:text-2xl font-bold mb-6">Alamat</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-            <InputField label="Alamat Lengkap" value={formData.alamatLengkap} onChange={(value) => handleInputChange('alamatLengkap', value)} />
-            <InputField label="Provinsi" value={formData.provinsi} onChange={(value) => handleInputChange('provinsi', value)} />
-            <InputField label="Kota" value={formData.kota} onChange={(value) => handleInputChange('kota', value)} />
-            <InputField label="Kode Pos" value={formData.kodePos} onChange={(value) => handleInputChange('kodePos', value)} />
-          </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Maksimal Budget (Rp)</label>
+          {isEditMode ? (
+            <input type="number" name="max_budget" value={formData.max_budget} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required />
+          ) : (
+            <p className="text-gray-800">{user?.max_budget?.toLocaleString("id-ID") || "-"}</p>
+          )}
         </div>
 
-        <div className="flex justify-end gap-4">
-          <button
-            onClick={handleCancel}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-          >
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Maksimal Jarak (km)</label>
+          {isEditMode ? (
+            <input type="number" name="max_distance_km" value={formData.max_distance_km} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required />
+          ) : (
+            <p className="text-gray-800">{user?.max_distance_km || "-"}</p>
+          )}
+        </div>
+      </div>
+
+      {isEditMode ? (
+        <div className="mt-6 flex justify-end space-x-3">
+          <button onClick={handleCancel} className="px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50">
             Batal
           </button>
-          <button
-            onClick={handleSave}
-            className="px-6 py-2 bg-[var(--color-p-300)] text-white rounded-lg hover:bg-[var(--color-p-400)] transition-colors duration-200"
-          >
+          <button onClick={handleSave} className="px-4 py-2 bg-[var(--color-p-300)] border border-transparent rounded-full text-sm font-medium text-white hover:bg-[var(--color-p-400)]">
             Simpan
           </button>
         </div>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-        <h2 className="text-[var(--color-p-300)] text-xl md:text-2xl font-bold mb-6">Informasi Pribadi</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-          <Info label="Nama Lengkap" value={formData.namaLengkap} />
-          <Info label="Email" value={formData.email} />
-          <Info label="Nomor Telepon" value={formData.nomorTelepon} />
-          <Info label="Tanggal Lahir" value={formData.tanggalLahir} />
-          <Info label="Jenis Kelamin" value={formData.jenisKelamin} />
-          <Info label="NIK" value={formData.nik} />
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-[var(--color-p-300)] text-xl md:text-2xl font-bold mb-6">Alamat</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-          <Info label="Alamat Lengkap" value={formData.alamatLengkap} />
-          <Info label="Provinsi" value={formData.provinsi} />
-          <Info label="Kota" value={formData.kota} />
-          <Info label="Kode Pos" value={formData.kodePos} />
-        </div>
-      </div>
-    </>
+      ) : null}
+    </div>
   );
 };
 
 export default PersonalInfo;
+
