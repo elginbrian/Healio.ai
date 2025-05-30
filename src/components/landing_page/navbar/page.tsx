@@ -1,10 +1,10 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import ButtonPink from "@/components/button_pink/page"; // Untuk tombol Daftar
-import ButtonWhite from "@/components/button_white/page"; // Untuk tombol Masuk
+import ButtonPink from "@/components/button_pink/page";
+import ButtonWhite from "@/components/button_white/page";
 import NavText from "../../navbar_text/page";
-import { useAuth } from "@/lib/auth"; // Import useAuth
+import { useAuth } from "@/lib/auth";
 
 const Navbar = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -46,3 +46,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

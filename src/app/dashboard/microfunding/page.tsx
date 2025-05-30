@@ -1,4 +1,3 @@
-// components/microfunding/page.jsx
 'use client';
 
 import React from 'react';

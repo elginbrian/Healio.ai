@@ -69,7 +69,6 @@ const UploadReceipt = () => {
           className='mt-6 w-full py-3 bg-[var(--color-p-300)] text-white font-semibold rounded-full disabled:opacity-50'
           disabled={!selectedFile}
           onClick={() => {
-            // Logika upload bisa dimasukkan di sini
             alert(`Berkas "${selectedFile?.name}" siap diunggah!`);
           }}
         >
@@ -81,3 +80,4 @@ const UploadReceipt = () => {
 };
 
 export default UploadReceipt;
+

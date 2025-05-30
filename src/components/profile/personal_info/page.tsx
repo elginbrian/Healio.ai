@@ -1,7 +1,6 @@
 'use client';
 import React, { useState } from 'react';
 
-// --- Interfaces ---
 export interface PersonalInfoProps {
   isEditMode: boolean;
   setIsEditMode: (isEdit: boolean) => void;
@@ -38,7 +37,6 @@ export interface SelectFieldProps {
   onChange: (value: string) => void;
 }
 
-// --- Components ---
 
 const Info: React.FC<InfoProps> = ({ label, value }) => (
   <div className="flex flex-col">
@@ -98,7 +96,6 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({ isEditMode, setIsEditMode }
   };
 
   const handleSave = () => {
-    // Handle save logic here, e.g., send data to an API
     console.log("Saving data:", formData);
     setIsEditMode(false);
   };

@@ -21,14 +21,14 @@ const PoolCard = ({ icon: Icon, title, description, buttonText, onClick }: PoolC
       <h2 className="text-3xl font-bold text-white mb-4">
         {title}
       </h2>
-      <div className='h-24 flex items-center justify-center flex items-start'> {/* Tambahkan flex dan justify-center untuk vertikal align */}
-        <p className="text-white text-md max-w-sm"> {/* Hapus mb-8 dari sini agar tidak terlalu banyak spasi */}
+      <div className='h-24 flex items-center justify-center flex items-start'>
+        <p className="text-white text-md max-w-sm">
           {description}
         </p>
       </div>
       <button
         onClick={onClick}
-        className="bg-white text-[var(--color-p-300)] font-semibold py-3 px-8 rounded-full hover:bg-[var(--color-w-100)] transition duration-300 mt-auto" // Tambahkan mt-auto
+        className="bg-white text-[var(--color-p-300)] font-semibold py-3 px-8 rounded-full hover:bg-[var(--color-w-100)] transition duration-300 mt-auto"
       >
         {buttonText}
       </button>

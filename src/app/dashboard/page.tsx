@@ -7,7 +7,7 @@ export default function DashboardRedirectPage() {
   const router = useRouter()
 
   useEffect(() => {
-    router.replace('/dashboard/microfunding')
+    router.replace('/dashboard/facilities')
   }, [router])
 
   return null 

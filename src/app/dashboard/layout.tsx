@@ -91,12 +91,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <div className="h-full flex">
-      <Sidebar />
-      <main className="flex-1 min-h-screen overflow-hidden">
-        <div className="h-full overflow-y-auto">
-          {children}
-        </div>
+    <div className="h-screen w-full flex overflow-hidden">
+      <div className="h-full flex-shrink-0">
+        <Sidebar />
+      </div>
+      <main className="flex-1 overflow-hidden">
+        <div className="h-screen overflow-y-auto">{children}</div>
       </main>
 
       {!loading && user && isProfileModalOpen && (

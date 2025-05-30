@@ -1,13 +1,11 @@
 'use client';
 import React, { useState } from 'react';
 
-// Interface for JobInfo component props
 interface JobInfoProps {
   isEditMode: boolean;
   setIsEditMode: (value: boolean) => void;
 }
 
-// Interface for JobData state
 interface JobData {
   pekerjaan: string;
   perusahaan: string;
@@ -86,7 +84,6 @@ const JobInfo: React.FC<JobInfoProps> = ({ isEditMode, setIsEditMode }) => {
   );
 };
 
-// Interface for Info component props
 interface InfoProps {
   label: string;
   value: string;
@@ -99,7 +96,6 @@ const Info: React.FC<InfoProps> = ({ label, value }) => (
   </div>
 );
 
-// Interface for InputField component props
 interface InputFieldProps {
   label: string;
   value: string;
