@@ -106,6 +106,7 @@ jobs:
             MONGODB_URI=mongodb://mongodb:27017/healio_db
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             NODE_ENV=${TARGET_NODE_ENV}
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             EOF
 
             export DOCKER_IMAGE_TAG=${IMAGE_TAG} 
@@ -115,7 +116,8 @@ jobs:
             export MONGO_INITDB_DATABASE="healio_db"
             export TARGET_NODE_ENV=${TARGET_NODE_ENV}
             export JWT_SECRET_FOR_COMPOSE="${{ secrets.JWT_SECRET }}"
-            export DOCKER_USERNAME_ENV="${{ secrets.DOCKER_USERNAME }}" 
+            export DOCKER_USERNAME_ENV="${{ secrets.DOCKER_USERNAME }}"
+            export GEMINI_API_KEY_FOR_COMPOSE="${{ secrets.GEMINI_API_KEY }}"
 
             echo "Environment variables for docker-compose set."
             echo "DOCKER_USERNAME_ENV=${DOCKER_USERNAME_ENV}"

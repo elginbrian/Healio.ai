@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { useRouter } from "next/navigation";
 import api from "./api";
 import { IUser } from "@/types";
+import jwt from "jsonwebtoken";
 
 interface AuthContextType {
   isAuthenticated: boolean;
