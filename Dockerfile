@@ -1,14 +1,10 @@
-FROM node:18 AS deps
+FROM node:18 AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 
 RUN npm ci
 
-FROM node:18 AS builder
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NODE_ENV=production
