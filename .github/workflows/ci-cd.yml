@@ -127,13 +127,10 @@ jobs:
             echo "Stopping and removing old containers and volumes (database will be reset)..."
             docker-compose down -v --remove-orphans || true
 
-            echo "Pulling base MongoDB image..."
+            echo "Pulling base MongoDB image (if needed)..."
             docker-compose pull mongodb || true 
 
-            echo "Building images locally on the server..."
-            docker-compose build --no-cache app 
-
-            echo "Starting services with docker-compose..."
-            docker-compose up -d --force-recreate
+            echo "Building and starting services with docker-compose..."
+            docker-compose up -d --build --force-recreate
 
             echo "Deployment for branch $SCRIPT_BRANCH_NAME completed successfully."
