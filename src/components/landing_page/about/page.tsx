@@ -8,7 +8,7 @@ const About = () => {
             </div>
             <div className='w-7/12 flex items-center justify-center'>
                 <div className=' mr-24'>
-                    <p className="text-6xl text-[var(--color-p-300)] font-semibold mb-8">
+                    <p className="text-5xl text-[var(--color-p-300)] font-semibold mb-8">
                         Apa itu Healio.ai
                     </p>
                     <p className='text-2xl text-justify'>
