@@ -22,15 +22,21 @@ services:
     restart: unless-stopped
     ports:
       - "${APP_HOST_PORT:-3010}:${APP_CONTAINER_PORT:-3000}"
+    volumes:
+      - .:/app
+      - /app/node_modules
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/${MONGO_INITDB_DATABASE:-healio_db}
-      - NODE_ENV=${TARGET_NODE_ENV:-production}
+      - NODE_ENV=development
       - JWT_SECRET=${JWT_SECRET_FOR_COMPOSE}
       - GEMINI_API_KEY=${GEMINI_API_KEY_FOR_COMPOSE}
+      - NEXT_WEBPACK_USEPOLLING=1
+      - WATCHPACK_POLLING=true
     depends_on:
       - mongodb
     networks:
       - healio_ai_network
+    command: npm run dev
 
   cron-worker:
     build:
@@ -38,15 +44,18 @@ services:
       dockerfile: Dockerfile
     container_name: healio_ai_cron_worker
     restart: unless-stopped
-    command: npm run start:cron
+    volumes:
+      - .:/app
+      - /app/node_modules
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/${MONGO_INITDB_DATABASE:-healio_db}
-      - NODE_ENV=${TARGET_NODE_ENV:-production}
+      - NODE_ENV=development
       - GEMINI_API_KEY=${GEMINI_API_KEY_FOR_COMPOSE}
     depends_on:
       - mongodb
     networks:
       - healio_ai_network
+    command: npm run start:cron
 
 volumes:
   healio_ai_mongodb_data:
