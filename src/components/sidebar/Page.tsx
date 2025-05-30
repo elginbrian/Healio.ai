@@ -60,9 +60,8 @@ const Sidebar = () => {
         <SidebarItem name="profile" label="Profil" active={activeMenu === "profile"} onClick={() => handleNavigation("profile")} icon={FaUserCircle} expanded={expanded} />
       </div>
 
-
       <div className="absolute top-1/2 right-0 transform -translate-y-1/2 flex items-center">
-        <button onClick={toggleSidebar} className="bg-white hover:bg-gray-50 border border-gray-200 rounded-l-lg h-20 w-7 flex items-center justify-center shadow-md">
+        <button onClick={toggleSidebar} className="bg-white hover:bg-gray-50 border border-gray-200 rounded-l-full h-20 w-7 flex items-center justify-center shadow-md">
           {expanded ? <FaChevronLeft size={16} className="text-[var(--color-p-300)]" /> : <FaChevronRight size={16} className="text-[var(--color-p-300)]" />}
         </button>
       </div>
@@ -71,4 +70,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-

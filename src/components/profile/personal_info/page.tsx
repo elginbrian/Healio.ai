@@ -244,10 +244,10 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({ isEditMode, setIsEditMode }
 
       {isEditMode ? (
         <div className="mt-6 flex justify-end space-x-3">
-          <button onClick={handleCancel} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <button onClick={handleCancel} className="px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50">
             Batal
           </button>
-          <button onClick={handleSave} className="px-4 py-2 bg-[var(--color-p-300)] border border-transparent rounded-md text-sm font-medium text-white hover:bg-[var(--color-p-400)]">
+          <button onClick={handleSave} className="px-4 py-2 bg-[var(--color-p-300)] border border-transparent rounded-full text-sm font-medium text-white hover:bg-[var(--color-p-400)]">
             Simpan
           </button>
         </div>

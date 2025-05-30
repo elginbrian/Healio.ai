@@ -89,12 +89,10 @@ const Facilities = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <div className="flex-grow px-6 pt-8 md:px-10 pb-20 overflow-y-auto">
-
         <div className="flex justify-between items-center mb-8">
           <SearchField />
           <NotifProfile profileImageSrc={"/img/hospital_dummy.png"} />
         </div>
-
 
         <div className="mb-4">
           <div className="flex items-center justify-between mb-6">
@@ -108,7 +106,6 @@ const Facilities = () => {
               </button>
             </div>
           </div>
-
 
           <div className="relative">
             <div id="facilities-for-you" className="flex overflow-x-auto pb-8 hide-scrollbar" style={{ scrollSnapType: "x mandatory" }}>
@@ -125,7 +122,6 @@ const Facilities = () => {
           </div>
         </div>
 
-
         <div className="mb-4">
           <div className="flex items-center justify-between mb-6">
             <p className="text-[var(--color-p-300)] font-semibold text-3xl">Fasilitas di Sekitar Anda</p>
@@ -138,7 +134,6 @@ const Facilities = () => {
               </button>
             </div>
           </div>
-
 
           <div className="relative">
             <div id="facilities-nearby" className="flex overflow-x-auto pb-8 hide-scrollbar" style={{ scrollSnapType: "x mandatory" }}>
@@ -156,7 +151,6 @@ const Facilities = () => {
         </div>
       </div>
 
-
       <div className="mt-auto">
         <FooterDashboard />
       </div>
@@ -165,4 +159,3 @@ const Facilities = () => {
 };
 
 export default Facilities;
-
