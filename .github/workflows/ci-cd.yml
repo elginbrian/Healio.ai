@@ -116,8 +116,11 @@ jobs:
             export MONGO_INITDB_DATABASE="healio_db"
             export TARGET_NODE_ENV=${TARGET_NODE_ENV}
             export JWT_SECRET_FOR_COMPOSE="${{ secrets.JWT_SECRET }}"
+            export DOCKER_USERNAME_ENV="${{ secrets.DOCKER_USERNAME }}"
+
 
             echo "Environment variables for docker-compose set."
+            echo "DOCKER_USERNAME_ENV=${DOCKER_USERNAME_ENV}" # Pastikan ini diekspor
             echo "DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}"
             echo "APP_HOST_PORT=${APP_HOST_PORT}"
             echo "TARGET_NODE_ENV=${TARGET_NODE_ENV}"
@@ -127,7 +130,7 @@ jobs:
 
             echo "Pulling latest images..."
             docker-compose pull mongodb
-            docker-compose pull ${{ secrets.DOCKER_USERNAME }}/healio-ai-app:${IMAGE_TAG}
+            docker-compose pull app
 
             echo "Starting services with docker-compose..."
             docker-compose up -d --force-recreate
