@@ -6,7 +6,6 @@
   --background: #fafafa; /* Warna latar belakang untuk mode terang */
   --foreground: #171717; /* Warna teks untuk mode terang */
 
-    /* --- Primary (P) Colors --- */
   --color-p-75: #f4adce;
   --color-p-100: #f08cba;
   --color-p-200: #e95a9c;
@@ -14,7 +13,6 @@
   --color-p-400: #a0275f;
   --color-p-500: #8c2253;
 
-  /* --- White/Gray (W) Colors --- */
   --color-w-50: #ffffff;
   --color-w-75: #fdfdfd;
   --color-w-100: #fcfcfc;
@@ -23,7 +21,6 @@
   --color-w-400: #afafaf;
   --color-w-500: #999999;
 
-  /* --- Black/Gray (B) Colors --- */
   --color-b-50: #e6e6e6;
   --color-b-75: #969696;
   --color-b-100: #6b6b6b;
@@ -32,7 +29,6 @@
   --color-b-400: #000000;
   --color-b-500: #000000;
 
-  /* --- Red (R) Colors --- */
   --color-r-50: #ffe6e6;
   --color-r-75: #ff9698;
   --color-r-100: #ff6b6d;

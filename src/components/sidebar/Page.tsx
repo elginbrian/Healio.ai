@@ -7,10 +7,10 @@ const Sidebar = () => {
     const [activeMenu, setActiveMenu] = useState('home')
 
     return (
-        <div className='h-screen p-4 flex flex-col items-center gap-4 shadow-md justify-between'>
+        <div className='h-screen p-6 flex flex-col items-center gap-4 shadow-md justify-between'>
             <div className='flex flex-col items-center'>
 
-                <img src="/img/logo.svg" className='w-20 mb-6' alt="logo" />
+                <img src="/img/logo.svg" className='w-16 mb-6' alt="logo" />
                 <div className='flex-col'>
                     <SidebarItem
                         name="home"
