@@ -27,30 +27,29 @@ const testimonies = [
 
 const Testimony = () => {
   const [index, setIndex] = useState(0);
-  // State untuk mengontrol kelas animasi
   const [transitioning, setTransitioning] = useState(false);
 
   const handlePrev = () => {
-    setTransitioning(true); // Mulai transisi
+    setTransitioning(true);
     setTimeout(() => {
       setIndex((prev) => (prev === 0 ? testimonies.length - 1 : prev - 1));
-      setTransitioning(false); // Selesai transisi
-    }, 300); // Sesuaikan dengan durasi transisi CSS
+      setTransitioning(false);
+    }, 300);
   };
 
   const handleNext = () => {
-    setTransitioning(true); // Mulai transisi
+    setTransitioning(true);
     setTimeout(() => {
       setIndex((prev) => (prev === testimonies.length - 1 ? 0 : prev + 1));
-      setTransitioning(false); // Selesai transisi
-    }, 300); // Sesuaikan dengan durasi transisi CSS
+      setTransitioning(false);
+    }, 300);
   };
 
   return (
     <div className="w-full pb-48 px-4 md:px-72">
       <p className="text-5xl text-[var(--color-p-300)] font-semibold mb-12 text-center">Apa Kata Mereka</p>
 
-      {/* Tambahkan kelas transisi */}
+
       <div className={`transition-opacity duration-300 ease-in-out ${transitioning ? "opacity-0" : "opacity-100"}`}>
         <TestimonyCard quote={testimonies[index].quote} authorName={testimonies[index].authorName} authorTitle={testimonies[index].authorTitle} imageSrc={testimonies[index].imageSrc} />
       </div>
@@ -68,3 +67,4 @@ const Testimony = () => {
 };
 
 export default Testimony;
+

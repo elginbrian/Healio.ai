@@ -10,7 +10,6 @@ import { IUserCredentials, login } from "@/services/auth-service";
 import { useAuth } from "@/lib/auth";
 import toast from "react-hot-toast";
 
-// Komponen baru yang berisi logika form dan penggunaan useSearchParams
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +20,6 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const { login: authLogin } = useAuth();
 
-  // Menggunakan useEffect untuk menangani side-effect dari searchParams
   useEffect(() => {
     const justRegistered = searchParams.get("registered") === "true";
     if (justRegistered) {
@@ -163,3 +161,4 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+

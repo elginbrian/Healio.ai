@@ -93,18 +93,18 @@ export async function findAndStructureNewFacilities(area: string): Promise<Parti
         **INTERFACE TYPESCRIPT TARGET (Struktur Output yang Wajib Diikuti):**
         \`\`\`typescript
         interface IFacility {
-          name: string; // Nama resmi dan lengkap. WAJIB ADA.
-          type: "HOSPITAL" | "CLINIC" | "PUSKESMAS"; // Pilih salah satu dari tiga opsi ini. WAJIB ADA.
-          tariff_min?: number; // Estimasi biaya terendah dalam Rupiah (hanya angka).
-          tariff_max?: number; // Estimasi biaya tertinggi dalam Rupiah (hanya angka).
-          overall_rating?: number; // Rating dalam format ANGKA, misal: 4.7.
-          address: string; // Alamat lengkap dan jelas. WAJIB ADA.
-          location: { // Lakukan geocoding untuk mendapatkan koordinat. WAJIB ADA.
+          name: string;
+          type: "HOSPITAL" | "CLINIC" | "PUSKESMAS";
+          tariff_min?: number;
+          tariff_max?: number;
+          overall_rating?: number;
+          address: string;
+          location: {
             type: "Point";
-            coordinates: [number, number]; // Format: [longitude, latitude]
+            coordinates: [number, number];
           };
-          phone?: string; // Nomor telepon resmi.
-          services_offered?: string[]; // Daftar layanan utama dalam bentuk array string.
+          phone?: string;
+          services_offered?: string[];
         }
         \`\`\`
 
@@ -176,7 +176,7 @@ export async function enrichFacilityDataWithGemini(facility: IFacility): Promise
         address: string;
         location: {
         type: "Point";
-        coordinates: [number, number]; // [longitude, latitude]
+        coordinates: [number, number];
         };
         phone?: string;
         services_offered?: string[];
@@ -213,3 +213,4 @@ export async function enrichFacilityDataWithGemini(facility: IFacility): Promise
     return null;
   }
 }
+
