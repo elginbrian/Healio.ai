@@ -3,8 +3,9 @@
   "compilerOptions": {
     "noEmit": false,
     "outDir": "./dist_cron",
-    "module": "commonjs"
+    "module": "commonjs",
+    "moduleResolution": "node"
   },
-  "include": ["src/cron/**/*.ts", "src/lib/gemini.ts", "src/lib/db.ts", "src/models/facility.ts", "src/types/**/*.ts"],
-  "exclude": ["node_modules", ".next", "dist_cron", "src/app", "src/components", "src/pages"]
+  "include": ["src/cron/**/*.ts", "src/lib/gemini.ts", "src/lib/db.ts", "src/models/facility.ts", "src/models/user.ts", "src/types/**/*.ts"],
+  "exclude": ["node_modules", ".next", "dist_cron", "src/app", "src/components"]
 }
