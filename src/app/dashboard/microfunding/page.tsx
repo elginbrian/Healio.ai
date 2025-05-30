@@ -6,9 +6,9 @@ import NotifProfile from "@/components/notification_profile/page";
 import FooterDashboard from "@/components/landing_page/footer/footer_dashboard/page";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import PoolCard from "@/components/pool_card/page";
 import CreatePoolForm from "@/components/dashboard/create-pool-form";
 import JoinPoolForm from "@/components/dashboard/join-pool-form";
+import PoolCard from "@/components/microfunding/pool_card/page";
 
 const Microfunding = () => {
   const [showCreatePoolForm, setShowCreatePoolForm] = useState(false);
@@ -71,4 +71,3 @@ const Microfunding = () => {
 };
 
 export default Microfunding;
-
