@@ -5,18 +5,18 @@ export interface IUser {
   name: string;
   email: string;
   password_hash: string;
-  age: number;
-  gender: Gender;
-  phone: string;
-  ktp_number: string;
-  address: string;
-  bpjs_status: boolean;
-  employment_status: string;
-  income_level: number;
-  education_level: string;
-  chronic_conditions: string;
-  max_budget: number;
-  max_distance_km: number;
+  age?: number;
+  gender?: Gender;
+  phone?: string;
+  ktp_number?: string;
+  address?: string;
+  bpjs_status?: boolean;
+  employment_status?: string;
+  income_level?: number;
+  education_level?: string;
+  chronic_conditions?: string;
+  max_budget?: number;
+  max_distance_km?: number;
 
   perusahaan?: string;
   lamaBekerjaJumlah?: string;
@@ -32,4 +32,3 @@ export interface IUser {
   createdAt: string;
   updatedAt: string;
 }
-
