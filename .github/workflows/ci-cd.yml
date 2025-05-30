@@ -134,8 +134,8 @@ jobs:
             echo "Pulling base MongoDB image (if needed)..."
             docker-compose pull mongodb || true 
 
-            echo "Building app image locally on the server..."
-            docker-compose build --no-cache app 
+            echo "Building app and cron-worker images locally on the server..."
+            docker-compose build --no-cache app cron-worker
 
             echo "Starting services with docker-compose..."
             docker-compose up -d --force-recreate
