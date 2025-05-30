@@ -1,30 +1,32 @@
+"use client";
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import api from "./api";
+import { IUser } from "@/types";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | null;
-  user: any | null;
+  user: IUser | null;
   login: (token: string) => void;
   logout: () => void;
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
-  token: null,
-  user: null,
-  login: () => {},
-  logout: () => {},
-  loading: true,
-});
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth harus digunakan di dalam AuthProvider");
+  }
+  return context;
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<IUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -42,15 +44,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (authToken: string) => {
     try {
-      const response = await axios.get("/api/users/profile", {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
+      const response = await api.get<{ user: IUser }>("/api/users/profile");
       setUser(response.data.user);
     } catch (error) {
-      console.error("Error fetching user profile:", error);
+      console.error("Gagal mengambil profil pengguna:", error);
       logout();
     } finally {
       setLoading(false);
@@ -70,18 +67,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     router.push("/login");
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        isAuthenticated: !!token,
-        token,
-        user,
-        login,
-        logout,
-        loading,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const contextValue: AuthContextType = {
+    isAuthenticated: !!token,
+    token,
+    user,
+    login,
+    logout,
+    loading,
+  };
+
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
