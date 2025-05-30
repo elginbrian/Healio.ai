@@ -52,11 +52,11 @@ jobs:
     needs: docker
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref_name == 'master' || github.ref_name == 'dev')
-    env:
-      BRANCH_NAME: ${{ github.ref_name }}
     steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          SCRIPT_BRANCH_NAME: ${{ github.ref_name }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
@@ -66,31 +66,37 @@ jobs:
             set -e
             trap 'echo "An error occurred during deployment. Exiting..." && exit 1' ERR
 
-            echo "Deploying branch: $BRANCH_NAME"
+            echo "Deploying branch from SCRIPT_BRANCH_NAME: $SCRIPT_BRANCH_NAME"
 
-            if [ "$BRANCH_NAME" = "master" ]; then
+            if [ -z "$SCRIPT_BRANCH_NAME" ]; then
+              echo "Critical Error: SCRIPT_BRANCH_NAME is empty. GitHub context github.ref_name might not be populating as expected."
+              exit 1
+            fi
+
+            if [ "$SCRIPT_BRANCH_NAME" = "master" ]; then
               REPO_DIR="~/healio-ai-prod"
               APP_HOST_PORT="3010"
               IMAGE_TAG="latest"
               TARGET_NODE_ENV="production"
-            elif [ "$BRANCH_NAME" = "dev" ]; then
+            elif [ "$SCRIPT_BRANCH_NAME" = "dev" ]; then
               REPO_DIR="~/healio-ai-dev"
               APP_HOST_PORT="3011"
               IMAGE_TAG="dev"
               TARGET_NODE_ENV="development"
             else
-              echo "Branch $BRANCH_NAME is not configured for deployment. Exiting."
-              exit 0
+              echo "Error: Branch '$SCRIPT_BRANCH_NAME' is not 'master' or 'dev'."
+              echo "This indicates an issue with the workflow logic or github.ref_name evaluation, as the job's 'if' condition should prevent this."
+              exit 1
             fi
 
             mkdir -p $REPO_DIR
             cd $REPO_DIR
 
             if [ -d ".git" ]; then
-              echo "Updating repository in $REPO_DIR..."
+              echo "Updating repository in $REPO_DIR for branch $SCRIPT_BRANCH_NAME..."
               git reset --hard HEAD
               git clean -fd
-              git pull origin $BRANCH_NAME || git pull
+              git pull origin $SCRIPT_BRANCH_NAME || git pull
             else
               echo "Repository not found at $REPO_DIR. Consider cloning it first."
             fi
@@ -125,4 +131,4 @@ jobs:
             echo "Starting services with docker-compose..."
             docker-compose up -d --force-recreate
 
-            echo "Deployment for branch $BRANCH_NAME completed successfully."
+            echo "Deployment for branch $SCRIPT_BRANCH_NAME completed successfully."
