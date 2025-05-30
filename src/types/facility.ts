@@ -1,4 +1,9 @@
-import { FacilityType } from "./enums";
+import { FacilityType } from "@/types";
+
+interface IGeoJSONPoint {
+  type: "Point";
+  coordinates: [number, number];
+}
 
 export interface IFacility {
   _id: string;
@@ -8,10 +13,9 @@ export interface IFacility {
   tariff_max: number;
   overall_rating: number;
   address: string;
-  latitude: number;
-  longitude: number;
+  location: IGeoJSONPoint;
   phone?: string;
-  services_offered?: string;
+  services_offered?: string[];
   createdAt: string;
   updatedAt: string;
 }
