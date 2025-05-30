@@ -3,11 +3,11 @@ name: Healio-AI CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - master
       - dev
   pull_request:
     branches:
-      - main
+      - master
       - dev
 
 jobs:
@@ -50,7 +50,7 @@ jobs:
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/healio-ai-app"
 
           case "$BRANCH" in
-            "main")
+            "master")
               echo "Building production image..."
               docker build -t ${IMAGE_NAME}:latest -f Dockerfile .
               docker push ${IMAGE_NAME}:latest
@@ -69,7 +69,7 @@ jobs:
   deploy:
     needs: docker
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev')
+    if: github.event_name == 'push' && (github.ref_name == 'master' || github.ref_name == 'dev')
     env:
       BRANCH_NAME: ${{ github.ref_name }}
     steps:
@@ -86,7 +86,7 @@ jobs:
 
             echo "Deploying branch: $BRANCH_NAME"
 
-            if [ "$BRANCH_NAME" = "main" ]; then
+            if [ "$BRANCH_NAME" = "master" ]; then
               REPO_DIR="~/healio-ai-prod"
               APP_HOST_PORT="3010"
               IMAGE_TAG="latest"
