@@ -1,4 +1,4 @@
-
+// components/pool_card/page.jsx (No changes, included for completeness)
 'use client';
 
 import React from 'react';

@@ -1,21 +1,37 @@
-// components/microfunding/page.jsx
+// app/microfunding/page.jsx
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PlusSquare, Globe } from 'lucide-react';
-import PoolCard from '@/components/pool_card/page';
 import NotifProfile from '@/components/notification_profile/page';
 import FooterDashboard from '@/components/landing_page/footer/footer_dashboard/page';
+import PoolCard from '@/components/microfunding/pool_card/page';
+import JoinPoolForm from '@/components/microfunding/join_pool_form/page';
+import CreatePoolForm from '@/components/microfunding/create_pool_form/page';
+import JoinPoolSuccess from '@/components/microfunding/success_join/page';
 
 const Microfunding = () => {
+    const [showCreatePoolForm, setShowCreatePoolForm] = useState(false); // State to control create pool form visibility
+    const [showJoinPoolForm, setShowJoinPoolForm] = useState(false); // State to control join pool form visibility
+    const [showJoinPoolSuccess, setShowJoinPoolSuccess] = useState(false); // State to control join pool success popup
+
     const handleCreatePool = () => {
         console.log('Buat Pool Dana clicked!');
-        alert('Logika untuk membuat pool dana akan dijalankan.');
+        setShowCreatePoolForm(true); // Show the create pool form
     };
 
     const handleJoinPool = () => {
         console.log('Gabung ke Pool Dana clicked!');
-        alert('Logika untuk bergabung ke pool dana akan dijalankan.');
+        setShowJoinPoolForm(true); // Show the join pool form
+    };
+
+    const handleJoinSuccess = () => {
+        setShowJoinPoolForm(false); // Hide join form
+        setShowJoinPoolSuccess(true); // Show success popup
+    };
+
+    const handleCloseSuccess = () => {
+        setShowJoinPoolSuccess(false); // Hide success popup
     };
 
     return (
@@ -53,6 +69,20 @@ const Microfunding = () => {
             <div>
                 <FooterDashboard />
             </div>
+
+            {/* Conditionally render the CreatePoolForm */}
+            {showCreatePoolForm && <CreatePoolForm onClose={() => setShowCreatePoolForm(false)} />}
+            
+            {/* Conditionally render the JoinPoolForm */}
+            {showJoinPoolForm && (
+                <JoinPoolForm 
+                    onClose={() => setShowJoinPoolForm(false)} 
+                    onSuccess={handleJoinSuccess}
+                />
+            )}
+
+            {/* Conditionally render the JoinPoolSuccess */}
+            {showJoinPoolSuccess && <JoinPoolSuccess onClose={handleCloseSuccess} />}
         </div>
         
     );
