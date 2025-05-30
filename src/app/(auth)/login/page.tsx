@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -10,7 +10,8 @@ import { IUserCredentials, login } from "@/services/auth-service";
 import { useAuth } from "@/lib/auth";
 import toast from "react-hot-toast";
 
-export default function LoginPage() {
+// Komponen baru yang berisi logika form dan penggunaan useSearchParams
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -20,13 +21,13 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const { login: authLogin } = useAuth();
 
-  const justRegistered = searchParams.get("registered") === "true";
-
-  useState(() => {
+  // Menggunakan useEffect untuk menangani side-effect dari searchParams
+  useEffect(() => {
+    const justRegistered = searchParams.get("registered") === "true";
     if (justRegistered) {
       toast.success("Registrasi berhasil! Silakan login dengan akun baru Anda.");
     }
-  });
+  }, [searchParams]);
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
@@ -152,5 +153,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

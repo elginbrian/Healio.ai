@@ -6,8 +6,6 @@ RUN npm ci
 
 COPY . .
 
-ENV MONGODB_URI="mongodb://build-time-db/placeholder"
-ENV JWT_SECRET="build-time-secret-placeholder"
 ENV NODE_ENV="production"
 
 RUN npm run build
@@ -16,9 +14,6 @@ FROM node:18-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV="production"
-
-ENV MONGODB_URI=""
-ENV JWT_SECRET=""
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
