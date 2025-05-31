@@ -84,7 +84,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       let paymentConfirmedDate;
 
       if (midtransStatus.transaction_status === "settlement" || (midtransStatus.transaction_status === "capture" && midtransStatus.fraud_status === "accept")) {
-      if (midtransStatus.transaction_status === "settlement" || (midtransStatus.transaction_status === "capture" && midtransStatus.fraud_status === "accept")) {
         newStatus = ContributionStatus.SUCCESS;
         paymentConfirmedDate = new Date(midtransStatus.settlement_time || midtransStatus.transaction_time || Date.now());
       } else if (midtransStatus.transaction_status === "pending") {
@@ -100,7 +99,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         if (paymentConfirmedDate) {
           contribution.contribution_date = paymentConfirmedDate;
         }
-
 
         await contribution.save();
 
@@ -128,16 +126,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         {
           success: false,
           message: `Gagal memeriksa status Midtrans: ${error.message}`,
-          status: contribution.status,
-          contribution,
-        },
-        { status: 500 }
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Gagal memeriksa status Midtrans: ${error.message}`,
-          status: contribution.status,
+          status: contribution?.status || ContributionStatus.PENDING,
           contribution,
         },
         { status: 500 }
