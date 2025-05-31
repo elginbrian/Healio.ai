@@ -1,4 +1,4 @@
-name: Healio-AI CI/CD Pipeline
+name: Healio-AI CI/CD Pipeline (MongoDB to Server & Web to Vercel)
 
 on:
   push:
@@ -11,49 +11,14 @@ on:
       - dev
 
 jobs:
-  docker:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    env:
-      BRANCH: ${{ github.ref_name }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push Docker image
-        run: |
-          echo "Building image for branch: $BRANCH"
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/healio-ai-app"
-
-          case "$BRANCH" in
-            "master")
-              echo "Building production image..."
-              docker build -t ${IMAGE_NAME}:latest -f Dockerfile .
-              docker push ${IMAGE_NAME}:latest
-              ;;
-            "dev")
-              echo "Building development image..."
-              docker build -t ${IMAGE_NAME}:dev -f Dockerfile .
-              docker push ${IMAGE_NAME}:dev
-              ;;
-            *)
-              echo "Branch $BRANCH not recognized for Docker build, skipping."
-              exit 0
-              ;;
-          esac
-
-  deploy:
-    needs: docker
+  deploy-mongodb:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref_name == 'master' || github.ref_name == 'dev')
     steps:
-      - name: Deploy to server
+      - name: Checkout code (untuk docker-compose.yml)
+        uses: actions/checkout@v4
+
+      - name: Deploy MongoDB to server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -62,12 +27,13 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             set -e
-            trap 'echo "An error occurred during deployment. Exiting..." && exit 1' ERR
+            trap 'echo "An error occurred during MongoDB deployment. Exiting..." && exit 1' ERR
 
             SCRIPT_BRANCH_NAME="${{ github.ref_name }}"
-            REPO_URL="https://github.com/elginbrian/Healio.ai.git"
+            # Direktori di server untuk menyimpan docker-compose.yml dan file .env terkait MongoDB
+            TARGET_DIR="healio-ai-mongo-infra"
 
-            echo "Deploying branch from SCRIPT_BRANCH_NAME: $SCRIPT_BRANCH_NAME"
+            echo "Deploying MongoDB for branch: $SCRIPT_BRANCH_NAME"
 
             if [ -z "$SCRIPT_BRANCH_NAME" ]; then
               echo "Critical Error: SCRIPT_BRANCH_NAME is empty."
@@ -75,74 +41,45 @@ jobs:
             fi
 
             if [ "$SCRIPT_BRANCH_NAME" = "master" ]; then
-              REPO_DIR="healio-ai-prod" 
-              APP_HOST_PORT="3010"
-              IMAGE_TAG="latest" 
-              TARGET_NODE_ENV="production"
+              MONGO_HOST_PORT_VALUE="27017" # Port MongoDB untuk produksi
+              MONGO_INITDB_DATABASE_VALUE="healio_db_prod"
             elif [ "$SCRIPT_BRANCH_NAME" = "dev" ]; then
-              REPO_DIR="healio-ai-dev"
-              APP_HOST_PORT="3011"
-              IMAGE_TAG="dev"
-              TARGET_NODE_ENV="development"
+              MONGO_HOST_PORT_VALUE="27018" # Port MongoDB untuk dev (jika berbeda)
+              MONGO_INITDB_DATABASE_VALUE="healio_db_dev"
             else
-              echo "Error: Branch '$SCRIPT_BRANCH_NAME' is not 'master' or 'dev'."
-              exit 1
+              echo "Error: Branch '$SCRIPT_BRANCH_NAME' is not 'master' or 'dev'. MongoDB deployment skipped."
+              exit 1 # Keluar jika branch tidak dikenali
             fi
 
-            echo "Preparing deployment directory: $REPO_DIR"
-            if [ -d "$REPO_DIR" ]; then
-              echo "Removing existing directory: $REPO_DIR"
-              rm -rf "$REPO_DIR"
+            echo "Preparing MongoDB deployment directory: $TARGET_DIR"
+            if [ ! -d "$TARGET_DIR" ]; then
+              mkdir -p "$TARGET_DIR"
             fi
+            cd "$TARGET_DIR"
+            echo "Successfully changed directory to $TARGET_DIR"
 
-            echo "Cloning repository $REPO_URL branch $SCRIPT_BRANCH_NAME into $REPO_DIR..."
-            git clone --branch $SCRIPT_BRANCH_NAME $REPO_URL $REPO_DIR
+            # Salin file docker-compose.yml yang sudah diperbarui (hanya MongoDB)
+            echo "Copying docker-compose.yml for MongoDB..."
+            cp ${{ github.workspace }}/docker-compose.yml ./docker-compose.yml
 
-            cd $REPO_DIR
-            echo "Successfully changed directory to $REPO_DIR"
-
-            echo "Creating/Updating .env file in $REPO_DIR/.env ..."
+            echo "Creating .env file for MongoDB in $TARGET_DIR/.env ..."
             cat > .env <<-EOF
-            MONGODB_URI=mongodb://mongodb:27017/healio_db
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            NODE_ENV=${TARGET_NODE_ENV}
-            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            MIDTRANS_CLIENT_KEY_SANDBOX=${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }}
-            MIDTRANS_SERVER_KEY_SANDBOX=${{ secrets.MIDTRANS_SERVER_KEY_SANDBOX }}
-            NEXT_PUBLIC_MIDTRANS_CLIENT_KEY_SANDBOX=${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }}
+            MONGO_HOST_PORT=${MONGO_HOST_PORT_VALUE}
+            MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE_VALUE}
+            # MONGO_INITDB_ROOT_USERNAME=admin
+            # MONGO_INITDB_ROOT_PASSWORD=securepassword
             EOF
 
-            export DOCKER_IMAGE_TAG=${IMAGE_TAG} 
-            export APP_CONTAINER_PORT="3000"
-            export APP_HOST_PORT=${APP_HOST_PORT}
-            export MONGO_HOST_PORT="27017"
-            export MONGO_INITDB_DATABASE="healio_db"
-            export TARGET_NODE_ENV=${TARGET_NODE_ENV}
-            export JWT_SECRET_FOR_COMPOSE="${{ secrets.JWT_SECRET }}"
-            export DOCKER_USERNAME_ENV="${{ secrets.DOCKER_USERNAME }}"
-            export GEMINI_API_KEY_FOR_COMPOSE="${{ secrets.GEMINI_API_KEY }}"
-            export MIDTRANS_CLIENT_KEY_SANDBOX_FOR_COMPOSE="${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }}"
-            export MIDTRANS_SERVER_KEY_SANDBOX_FOR_COMPOSE="${{ secrets.MIDTRANS_SERVER_KEY_SANDBOX }}"
+            echo "Environment variables for MongoDB docker-compose set."
+            echo "MONGO_HOST_PORT=${MONGO_HOST_PORT_VALUE}"
+            echo "MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE_VALUE}"
 
-            echo "Environment variables for docker-compose set."
-            echo "DOCKER_USERNAME_ENV=${DOCKER_USERNAME_ENV}"
-            echo "DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}"
-            echo "APP_HOST_PORT=${APP_HOST_PORT}"
-            echo "TARGET_NODE_ENV=${TARGET_NODE_ENV}"
+            echo "Pulling latest MongoDB image (if needed)..."
+            docker-compose pull mongodb || true
 
-            echo "Stopping and removing old containers and volumes (database will be reset)..."
-            docker-compose down -v --remove-orphans || true
+            echo "Starting MongoDB service with docker-compose..."
+            # Perintah ini akan menghentikan dan menghapus container lama jika ada perubahan konfigurasi atau image,
+            # lalu membuat yang baru. Volume data akan tetap ada.
+            docker-compose up -d --force-recreate mongodb
 
-            echo "Pruning unused Docker images..."
-            docker images prune -af || true
-
-            echo "Pulling base MongoDB image (if needed)..."
-            docker-compose pull mongodb || true 
-
-            echo "Building app images locally on the server..."
-            docker-compose build --no-cache app
-
-            echo "Starting services with docker-compose..."
-            docker-compose up -d --force-recreate
-
-            echo "Deployment for branch $SCRIPT_BRANCH_NAME completed successfully."
+            echo "MongoDB deployment for branch $SCRIPT_BRANCH_NAME completed successfully."

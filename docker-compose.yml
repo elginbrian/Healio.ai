@@ -14,29 +14,6 @@ services:
     networks:
       - healio_ai_network
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: healio_ai_app
-    restart: unless-stopped
-    ports:
-      - "${APP_HOST_PORT:-3010}:${APP_CONTAINER_PORT:-3000}"
-    volumes:
-      - ./.env:/app/.env
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/${MONGO_INITDB_DATABASE:-healio_db}
-      - NODE_ENV=production
-      - JWT_SECRET=${JWT_SECRET_FOR_COMPOSE}
-      - GEMINI_API_KEY=${GEMINI_API_KEY_FOR_COMPOSE}
-      - MIDTRANS_CLIENT_KEY_SANDBOX=${MIDTRANS_CLIENT_KEY_SANDBOX_FOR_COMPOSE}
-      - MIDTRANS_SERVER_KEY_SANDBOX=${MIDTRANS_SERVER_KEY_SANDBOX_FOR_COMPOSE}
-      - NEXT_PUBLIC_MIDTRANS_CLIENT_KEY_SANDBOX=${MIDTRANS_CLIENT_KEY_SANDBOX_FOR_COMPOSE}
-    depends_on:
-      - mongodb
-    networks:
-      - healio_ai_network
-
 volumes:
   healio_ai_mongodb_data:
     name: healio_ai_mongodb_data
