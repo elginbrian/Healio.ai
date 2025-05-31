@@ -34,12 +34,12 @@ jobs:
           case "$BRANCH" in
             "master")
               echo "Building production image..."
-              docker build --build-arg NODE_ENV=production -t ${IMAGE_NAME}:latest -f Dockerfile .
+              docker build -t ${IMAGE_NAME}:latest -f Dockerfile .
               docker push ${IMAGE_NAME}:latest
               ;;
             "dev")
               echo "Building development image..."
-              docker build --build-arg NODE_ENV=development -t ${IMAGE_NAME}:dev -f Dockerfile .
+              docker build -t ${IMAGE_NAME}:dev -f Dockerfile .
               docker push ${IMAGE_NAME}:dev
               ;;
             *)
@@ -117,7 +117,7 @@ jobs:
             export APP_HOST_PORT=${APP_HOST_PORT}
             export MONGO_HOST_PORT="27017"
             export MONGO_INITDB_DATABASE="healio_db"
-            export TARGET_NODE_ENV=${TARGET_NODE_ENV:-development}
+            export TARGET_NODE_ENV=${TARGET_NODE_ENV}
             export JWT_SECRET_FOR_COMPOSE="${{ secrets.JWT_SECRET }}"
             export DOCKER_USERNAME_ENV="${{ secrets.DOCKER_USERNAME }}"
             export GEMINI_API_KEY_FOR_COMPOSE="${{ secrets.GEMINI_API_KEY }}"
@@ -140,7 +140,7 @@ jobs:
             docker-compose pull mongodb || true 
 
             echo "Building app and cron-worker images locally on the server..."
-            docker-compose build --build-arg NODE_ENV=${TARGET_NODE_ENV} --no-cache app cron-worker
+            docker-compose build --no-cache app cron-worker
 
             echo "Starting services with docker-compose..."
             docker-compose up -d --force-recreate
