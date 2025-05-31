@@ -1,5 +1,19 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { IFacility, IUser } from "@/types";
+import { ExpenseCategory, IFacility, IUser } from "@/types";
+import * as fs from "fs";
+
+export interface ParsedReceiptData {
+  items: Array<{
+    medicine_name: string;
+    quantity?: number;
+    unit_price?: number;
+    total_price: number;
+    category: ExpenseCategory;
+  }>;
+  totalAmount?: number;
+  facilityName?: string;
+  transactionDate?: string;
+}
 
 const apiKey = process.env.GEMINI_API_KEY ?? "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -220,12 +234,7 @@ export async function enrichFacilityDataWithGemini(facility: IFacility): Promise
   }
 }
 
-export async function searchFacilitiesWithGemini(
-  query: string,
-  userLocation: { latitude: number; longitude: number },
-  maxDistanceKm: number,
-  maxBudget: number
-): Promise<Partial<IFacility>[]> {
+export async function searchFacilitiesWithGemini(query: string, userLocation: { latitude: number; longitude: number }, maxDistanceKm: number, maxBudget: number): Promise<Partial<IFacility>[]> {
   const prompt = `
     **Task**: You are a healthcare facility search expert. Analyze the user's search query and find the most relevant healthcare facilities.
     
@@ -263,30 +272,23 @@ export async function searchFacilitiesWithGemini(
     const result = await model.generateContent(prompt);
     const response = result.response;
     let text = response.text().trim();
-    
+
     text = text.replace(/```json|```/g, "").trim();
-    
+
     if (!text.startsWith("[") || !text.endsWith("]")) {
       console.error("Unexpected Gemini response format:", text);
       return [];
     }
-    
+
     try {
       const facilities = JSON.parse(text);
-      
-      const validFacilities = facilities.filter(
-        (facility: any) => 
-          facility && 
-          facility.name && 
-          facility.address && 
-          (facility.latitude !== undefined && facility.longitude !== undefined)
-      );
-      
+
+      const validFacilities = facilities.filter((facility: any) => facility && facility.name && facility.address && facility.latitude !== undefined && facility.longitude !== undefined);
+
       return validFacilities.map((facility: any, index: number) => ({
         ...facility,
         _id: `search-${Date.now()}-${index}`,
       }));
-      
     } catch (parseError) {
       console.error("Error parsing Gemini search results:", parseError);
       return [];
@@ -297,5 +299,131 @@ export async function searchFacilitiesWithGemini(
   }
 }
 
+interface GeminiExtractionResult {
+  items: Array<{
+    name: string;
+    quantity?: number;
+    unit_price?: number;
+    total_price: number;
+    category?: ExpenseCategory;
+  }>;
+  overall_total?: number;
+  store_name?: string;
+  transaction_date?: string;
+}
 
+export async function processReceiptWithGemini(imagePath: string): Promise<ParsedReceiptData | null> {
+  const apiKey = process.env.GEMINI_API_KEY ?? "";
+  if (!apiKey) {
+    console.error("GEMINI_API_KEY is not set.");
+    throw new Error("Konfigurasi AI tidak lengkap.");
+  }
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  const imageBuffer = fs.readFileSync(imagePath);
+  const imageBase64 = imageBuffer.toString("base64");
+
+  const prompt = `
+    Anda adalah AI ahli dalam membaca struk pembelian, khususnya struk medis, apotek, atau rumah sakit.
+    Tugas Anda adalah mengekstrak informasi detail dari gambar struk yang diberikan.
+
+    Format Output yang DIHARAPKAN (WAJIB JSON VALID):
+    {
+      "items": [
+        {
+          "name": "NAMA_PRODUK_ATAU_LAYANAN",
+          "quantity": JUMLAH_PRODUK (angka, jika ada, default 1),
+          "unit_price": HARGA_SATUAN_PRODUK (angka, jika ada),
+          "total_price": TOTAL_HARGA_PRODUK_INI (angka, wajib ada),
+          "category": "KATEGORI_PENGELUARAN" (pilih dari: ${Object.values(ExpenseCategory).join(", ")}. Jika tidak yakin, gunakan 'OTHER'.)
+        }
+      ],
+      "overall_total": TOTAL_KESELURUHAN_PEMBAYARAN (angka, jika tertera jelas),
+      "store_name": "NAMA_TOKO_ATAU_FASILITAS_KESEHATAN" (jika tertera),
+      "transaction_date": "YYYY-MM-DD" (TANGGAL_TRANSAKSI, jika tertera, format YYYY-MM-DD)
+    }
+
+    Aturan Penting:
+    1.  Fokus pada item pembelian, harga, nama tempat, dan tanggal.
+    2.  Jika kuantitas atau harga satuan tidak jelas, Anda boleh mengosongkannya, tetapi 'name' dan 'total_price' untuk setiap item HARUS ADA.
+    3.  Jika ada beberapa item, pastikan semua tercatat dalam array "items".
+    4.  Jika struk sangat tidak jelas atau bukan struk pembelian, kembalikan JSON dengan array "items" kosong.
+    5.  Untuk 'category', cobalah untuk mengklasifikasikan berdasarkan nama item. Misalnya, jika ada kata "obat", "sirup", "tablet", gunakan "MEDICATION". Jika "konsultasi", "dokter", gunakan "CONSULTATION". Jika "lab", "tes darah", gunakan "LAB_FEE". Default ke "OTHER".
+    6.  Pastikan output SELALU berupa string JSON yang valid. Jangan tambahkan penjelasan atau teks lain di luar JSON.
+
+    Analisis gambar struk berikut dan berikan output JSON sesuai format di atas.
+  `;
+
+  try {
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: imageBase64,
+          mimeType: "image/jpeg",
+        },
+      },
+    ]);
+    const responseText = result.response.text().trim();
+
+    const cleanedText = responseText.replace(/^```json\s*|```$/g, "").trim();
+
+    console.log("Gemini OCR Raw Response:", cleanedText);
+    const parsed = JSON.parse(cleanedText) as GeminiExtractionResult;
+
+    const transformedData: ParsedReceiptData = {
+      items: parsed.items.map((item) => ({
+        medicine_name: item.name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+        category: item.category || ExpenseCategory.OTHER,
+      })),
+      totalAmount: parsed.overall_total,
+      facilityName: parsed.store_name,
+      transactionDate: parsed.transaction_date,
+    };
+
+    return transformedData;
+  } catch (error) {
+    console.error("Error processing receipt with Gemini:", error);
+    throw new Error("AI gagal memproses gambar struk.");
+  }
+}
+
+export async function generateSpendingRecommendations(expenses: any[]): Promise<string[]> {
+  const apiKey = process.env.GEMINI_API_KEY ?? "";
+  if (!apiKey) {
+    console.error("GEMINI_API_KEY is not set.");
+    throw new Error("Konfigurasi AI tidak lengkap.");
+  }
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  const prompt = `
+    Anda adalah seorang penasihat keuangan pribadi yang fokus pada pengeluaran kesehatan.
+    Berdasarkan data riwayat pengeluaran kesehatan pengguna berikut (dalam format JSON), berikan 2-3 rekomendasi praktis dan singkat untuk membantu mereka mengelola keuangan kesehatannya dengan lebih baik.
+    Fokus pada pola pengeluaran, potensi penghematan, atau alokasi dana yang lebih baik.
+
+    Data Pengeluaran Pengguna:
+    ${JSON.stringify(expenses, null, 2)}
+
+    Format output yang diinginkan adalah array JSON berisi string rekomendasi. Contoh:
+    ["Saran pertama Anda.", "Saran kedua yang bermanfaat.", "Saran ketiga."]
+    Pastikan output hanya berupa array JSON string tersebut.
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text().trim();
+    const cleanedText = responseText.replace(/^```json\s*|```$/g, "").trim();
+    console.log("Gemini Spending Recommendation Raw Response:", cleanedText);
+    const recommendations = JSON.parse(cleanedText);
+    return Array.isArray(recommendations) ? recommendations : ["AI tidak dapat memberikan rekomendasi saat ini."];
+  } catch (error) {
+    console.error("Error generating spending recommendations with Gemini:", error);
+    return ["Gagal mendapatkan rekomendasi dari AI saat ini."];
+  }
+}
 
