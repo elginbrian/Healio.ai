@@ -18,15 +18,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=${TARGET_NODE_ENV:-development}
     container_name: healio_ai_app
     restart: unless-stopped
     ports:
       - "${APP_HOST_PORT:-3010}:${APP_CONTAINER_PORT:-3000}"
     volumes:
       - ./.env:/app/.env
+      - ./src:/app/src
+      - ./public:/app/public
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/${MONGO_INITDB_DATABASE:-healio_db}
-      - NODE_ENV=production
+      - NODE_ENV=${TARGET_NODE_ENV:-development}
       - JWT_SECRET=${JWT_SECRET_FOR_COMPOSE}
       - GEMINI_API_KEY=${GEMINI_API_KEY_FOR_COMPOSE}
       - MIDTRANS_CLIENT_KEY_SANDBOX=${MIDTRANS_CLIENT_KEY_SANDBOX}
@@ -47,7 +51,7 @@ services:
       - ./.env:/app/.env
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/${MONGO_INITDB_DATABASE:-healio_db}
-      - NODE_ENV=production
+      - NODE_ENV=${TARGET_NODE_ENV:-development}
       - GEMINI_API_KEY=${GEMINI_API_KEY_FOR_COMPOSE}
       - MIDTRANS_CLIENT_KEY_SANDBOX=${MIDTRANS_CLIENT_KEY_SANDBOX}
       - MIDTRANS_SERVER_KEY_SANDBOX=${MIDTRANS_SERVER_KEY_SANDBOX}

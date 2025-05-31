@@ -1,16 +1,21 @@
-FROM node:18-alpine AS builder
+FROM node:18-alpine
+
 WORKDIR /app
+
+ARG NODE_ENV=development
+ENV NODE_ENV=${NODE_ENV}
+
 COPY package*.json ./
 RUN npm install
-COPY . .
-RUN npm run build
 
-FROM node:18-alpine
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY . .
+
+RUN if [ "$NODE_ENV" = "production" ]; then npm run build; fi
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+
+CMD if [ "$NODE_ENV" = "production" ]; then \
+        npm start; \
+    else \
+        npm run dev; \
+    fi
