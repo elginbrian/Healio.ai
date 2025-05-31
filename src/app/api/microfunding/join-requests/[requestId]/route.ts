@@ -7,10 +7,19 @@ import JoinRequest from "@/models/join-request";
 import MicrofundingPool from "@/models/microfunding-pool";
 import PoolMember from "@/models/pool-member";
 
-export async function PATCH(request: NextRequest, context: { params: { requestId: string } }) {
+// The dynamic part of your route is assumed to be [requestId]
+// e.g., /api/some-route/[requestId]
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ requestId: string }> } // 1. FIX: Update the type for params
+) {
   try {
     await connectToDatabase();
-    const { requestId } = context.params;
+    const { requestId } = await params;
+
+    if (!requestId) {
+      return NextResponse.json({ success: false, message: "Request ID tidak ditemukan dalam parameter." }, { status: 400 });
+    }
 
     const adminUserId = getUserIdFromToken(request.headers.get("Authorization"));
     if (!adminUserId) {
@@ -42,17 +51,14 @@ export async function PATCH(request: NextRequest, context: { params: { requestId
       return NextResponse.json({ success: false, message: "Pool terkait tidak ditemukan." }, { status: 404 });
     }
 
-    // Verifikasi apakah pengguna adalah admin dari pool ini
     const adminMembership = await PoolMember.findOne({ pool_id: pool._id, user_id: adminUserId, role: PoolMemberRole.ADMIN });
     if (!adminMembership) {
       return NextResponse.json({ success: false, message: "Akses ditolak: Anda bukan admin pool ini." }, { status: 403 });
     }
 
     if (newStatus === JoinRequestStatus.APPROVED) {
-      // Cek apakah pool sudah penuh
       const memberCount = await PoolMember.countDocuments({ pool_id: pool._id });
       if (memberCount >= pool.max_members) {
-        // Otomatis tolak jika penuh, atau biarkan admin memutuskan (tapi ini lebih aman)
         joinRequestDoc.status = JoinRequestStatus.REJECTED;
         joinRequestDoc.resolved_at = new Date().toISOString();
         joinRequestDoc.resolver_user_id = adminUserId as any;
@@ -60,7 +66,6 @@ export async function PATCH(request: NextRequest, context: { params: { requestId
         return NextResponse.json({ success: false, message: "Gagal menyetujui: Pool sudah penuh." }, { status: 400 });
       }
 
-      // Tambahkan sebagai anggota baru
       const newMember = new PoolMember({
         pool_id: pool._id,
         user_id: joinRequestDoc.user_id,
@@ -89,7 +94,7 @@ export async function PATCH(request: NextRequest, context: { params: { requestId
   } catch (error: any) {
     console.error("UPDATE_JOIN_REQUEST_ERROR:", error);
     if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map((val: any) => val.message);
+      const messages = Object.values(error.errors).map((val: any) => (val as Error).message);
       return NextResponse.json({ success: false, message: messages.join(", ") }, { status: 400 });
     }
     return NextResponse.json({ success: false, message: "Terjadi kesalahan pada server." }, { status: 500 });
