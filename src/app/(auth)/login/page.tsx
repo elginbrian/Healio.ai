@@ -6,7 +6,7 @@ import Image from "next/image";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useRouter, useSearchParams } from "next/navigation";
-import { IUserCredentials, login } from "@/services/auth-service";
+import { login } from "@/services/auth-service";
 import { useAuth } from "@/lib/auth";
 import toast from "react-hot-toast";
 
@@ -38,7 +38,7 @@ function LoginForm() {
 
     const loginPromise = new Promise<string>(async (resolve, reject) => {
       try {
-        const credentials: IUserCredentials = { email, password };
+        const credentials = { email, password };
         const token = await login(credentials);
         resolve(token);
       } catch (err: any) {
@@ -161,4 +161,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-
