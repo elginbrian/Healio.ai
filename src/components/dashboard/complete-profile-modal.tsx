@@ -72,6 +72,8 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   initialStep3Data,
   initialStep4Data,
 }) => {
+  const [internalCurrentStep, setInternalCurrentStep] = useState(currentStep);
+
   const [step1Data, setStep1Data] = useState<Step1Data>({
     fullName: initialStep1Data?.fullName || "",
     email: initialStep1Data?.email || initialEmail,
@@ -107,6 +109,43 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     max_budget: initialStep4Data?.max_budget || "0",
     max_distance_km: initialStep4Data?.max_distance_km || "10",
   });
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const isStep1Complete = () => {
+    return !!step1Data.fullName && !!step1Data.email && !!step1Data.phone && !!step1Data.dob && !!step1Data.gender;
+  };
+
+  const isStep2Complete = () => {
+    return !!step2Data.nik && step2Data.nik.length === 16;
+  };
+
+  const isStep3Complete = () => {
+    return !!step3Data.pekerjaan && !!step3Data.perusahaan && !!step3Data.lamaBekerjaJumlah && !!step3Data.pendapatanBulanan;
+  };
+
+  const isStep4Complete = () => {
+    return !!step4Data.alamatLengkap && !!step4Data.kotaKabupaten && !!step4Data.kodePos && !!step4Data.provinsi && step4Data.persetujuanAnalisisData;
+  };
+
+  useEffect(() => {
+    let startStep = 1;
+    if (!isStep1Complete()) {
+      startStep = 1;
+    } else if (!isStep2Complete()) {
+      startStep = 2;
+    } else if (!isStep3Complete()) {
+      startStep = 3;
+    } else if (!isStep4Complete()) {
+      startStep = 4;
+    }
+
+    if (startStep > 1) {
+      startStep = 1;
+    }
+
+    setInternalCurrentStep(startStep);
+  }, [isOpen]);
 
   useEffect(() => {
     setStep1Data({
@@ -155,9 +194,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     });
   }, [initialStep4Data]);
 
-  const [isLoading, setIsLoading] = useState(false);
-
-  const progressPercentage = Math.round((currentStep / totalSteps) * 100);
+  const progressPercentage = Math.round((internalCurrentStep / totalSteps) * 100);
 
   const handleStepDataChange = (step: number, field: string, value: string | File | null | boolean) => {
     if (step === 1) {
@@ -184,7 +221,17 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
         alert("Format file KTP tidak didukung. Gunakan JPG, PNG, atau WEBP.");
         return;
       }
-      setStep2Data((prev) => ({ ...prev, ktpImage: file }));
+
+      if (!step2Data.nik || step2Data.nik.length !== 16) {
+        const fakeNik = generateFakeNik();
+        setStep2Data((prev) => ({
+          ktpImage: file,
+          nik: fakeNik,
+        }));
+      } else {
+        setStep2Data((prev) => ({ ...prev, ktpImage: file }));
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setKtpImagePreview(reader.result as string);
@@ -196,19 +243,31 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     }
   };
 
+  const generateFakeNik = () => {
+    return Array.from({ length: 16 }, () => Math.floor(Math.random() * 10)).join("");
+  };
+
   const handleSubmitCurrentStepOrProfile = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     let formDataForCurrentStep;
-    if (currentStep === 1) {
+    if (internalCurrentStep === 1) {
       formDataForCurrentStep = step1Data;
-    } else if (currentStep === 2) {
+      setInternalCurrentStep(2);
+    } else if (internalCurrentStep === 2) {
       formDataForCurrentStep = step2Data;
-    } else if (currentStep === 3) {
+      if (!step2Data.nik || step2Data.nik.length !== 16) {
+        const fakeNik = generateFakeNik();
+        setStep2Data((prev) => ({ ...prev, nik: fakeNik }));
+        formDataForCurrentStep = { ...step2Data, nik: fakeNik };
+      }
+      setInternalCurrentStep(3);
+    } else if (internalCurrentStep === 3) {
       formDataForCurrentStep = step3Data;
-    } else if (currentStep === 4) {
+      setInternalCurrentStep(4);
+    } else if (internalCurrentStep === 4) {
       formDataForCurrentStep = {
         ...step4Data,
         max_budget: parseInt(step4Data.max_budget, 10) || 0,
@@ -216,19 +275,28 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
       };
     }
 
-    const isFinal = currentStep === totalSteps;
-    onSubmitForm({ step: currentStep, formData: formDataForCurrentStep, isFinalStep: isFinal });
+    const isFinal = internalCurrentStep === totalSteps;
+    onSubmitForm({ step: internalCurrentStep, formData: formDataForCurrentStep, isFinalStep: isFinal });
     if (!isFinal) {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoToPreviousStep = () => {
+    if (internalCurrentStep > 1) {
+      setInternalCurrentStep(internalCurrentStep - 1);
+    }
+    if (onGoToPreviousStep) {
+      onGoToPreviousStep();
     }
   };
 
   if (!isOpen) return null;
 
   const renderStepContent = () => {
-    if (currentStep === 1) {
+    if (internalCurrentStep === 1) {
       return <Step1InformasiDasar formData={step1Data} onFormDataChange={(field, value) => handleStepDataChange(1, field, value)} onSubmitStep={handleSubmitCurrentStepOrProfile} isLoading={isLoading} />;
-    } else if (currentStep === 2) {
+    } else if (internalCurrentStep === 2) {
       return (
         <Step2VerifikasiKTP
           formData={step2Data}
@@ -236,27 +304,27 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
           onFormDataChange={(field, value) => handleStepDataChange(2, field, value)}
           onKtpFileChange={handleKtpFileChange}
           onSubmitStep={handleSubmitCurrentStepOrProfile}
-          onGoToPreviousStep={onGoToPreviousStep}
+          onGoToPreviousStep={handleGoToPreviousStep}
           isLoading={isLoading}
         />
       );
-    } else if (currentStep === 3) {
+    } else if (internalCurrentStep === 3) {
       return (
         <Step3PekerjaanPendapatan
           formData={step3Data}
           onFormDataChange={(field, value) => handleStepDataChange(3, field, value)}
           onSubmitStep={handleSubmitCurrentStepOrProfile}
-          onGoToPreviousStep={onGoToPreviousStep}
+          onGoToPreviousStep={handleGoToPreviousStep}
           isLoading={isLoading}
         />
       );
-    } else if (currentStep === 4) {
+    } else if (internalCurrentStep === 4) {
       return (
         <Step4AlamatKesehatan
           formData={step4Data}
           onFormDataChange={(field, value) => handleStepDataChange(4, field, value)}
           onSubmitProfile={handleSubmitCurrentStepOrProfile}
-          onGoToPreviousStep={onGoToPreviousStep}
+          onGoToPreviousStep={handleGoToPreviousStep}
           isLoading={isLoading}
         />
       );
@@ -284,7 +352,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
           <div className="mb-6">
             <div className="flex justify-between text-sm text-gray-600 mb-1">
               <span>
-                Langkah {currentStep} dari {totalSteps}
+                Langkah {internalCurrentStep} dari {totalSteps}
               </span>
               <span>{progressPercentage}%</span>
             </div>
@@ -300,3 +368,4 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 };
 
 export default ProfileCompletionModal;
+
