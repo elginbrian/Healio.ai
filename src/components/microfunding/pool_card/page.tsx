@@ -1,4 +1,3 @@
-// components/pool_card/page.jsx (No changes, included for completeness)
 'use client';
 
 import React from 'react';
@@ -37,3 +36,4 @@ const PoolCard = ({ icon: Icon, title, description, buttonText, onClick }: PoolC
 };
 
 export default PoolCard;
+

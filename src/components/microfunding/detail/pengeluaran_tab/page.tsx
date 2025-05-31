@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
-import { Hospital, Pill, Stethoscope } from 'lucide-react'; // Example icons
+import { Hospital, Pill, Stethoscope } from 'lucide-react';
 
 interface Expense {
   type: string;
@@ -8,7 +8,7 @@ interface Expense {
   hospital?: string;
   date: string;
   amount: number;
-  icon: React.ElementType; // To hold the Lucide icon component
+  icon: React.ElementType;
 }
 
 const expenses: Expense[] = [

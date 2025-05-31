@@ -63,7 +63,7 @@ const Payment = () => {
                 <h2 className="text-xl font-semibold text-[#E91E63] mb-6">Detail Pembayaran</h2>
                 <div className=" rounded-xl shadow-md p-6">
 
-                    {/* Periode Pembayaran */}
+
                     <div className="mb-6">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Periode Pembayaran
@@ -79,7 +79,7 @@ const Payment = () => {
                         </select>
                     </div>
 
-                    {/* Jumlah Pembayaran */}
+
                     <div className="mb-6">
                         <div className="flex justify-between items-center">
                             <span className="text-sm font-medium text-gray-700">Kontribusi Bulanan Pool</span>
@@ -87,14 +87,14 @@ const Payment = () => {
                         </div>
                     </div>
 
-                    {/* Metode Pembayaran */}
+
                     <div className="mb-6">
                         <label className="block text-sm font-medium text-gray-700 mb-4">
                             Jumlah Pembayaran
                         </label>
                         <div className="space-y-3">
                             {paymentMethods.map((method) => (
-                                <label key={method.id} className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"> {/* Changed border to border-gray-300 */}
+                                <label key={method.id} className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                                     <input
                                         type="radio"
                                         name="payment"
@@ -110,16 +110,16 @@ const Payment = () => {
                         </div>
                     </div>
 
-                    {/* Tombol Bayar */}
+
                     <button className="w-full bg-[#E91E63] text-white py-3 px-4 rounded-lg font-medium hover:bg-[#C2185B] transition-colors">
                         Bayar Sekarang
                     </button>
                 </div>
                 </div>
 
-                {/* Ringkasan Pembayaran & Riwayat */}
+
                 <div className="space-y-6">
-                    {/* Ringkasan Pembayaran */}
+
                     <h2 className="text-xl font-semibold text-[#E91E63] mb-6">Ringkasan Pembayaran</h2>
                     <div className="rounded-xl shadow-md p-6">
 
@@ -152,7 +152,7 @@ const Payment = () => {
                         </div>
                     </div>
 
-                    {/* Riwayat Pembayaran */}
+
                     <h2 className="text-xl font-semibold text-[#E91E63] mb-6">Riwayat Pembayaran</h2>
                     <div className="rounded-xl shadow-md p-6">
 

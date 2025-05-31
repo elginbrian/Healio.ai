@@ -1,12 +1,13 @@
+"use client";
 import React, { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
-import { ContributionPeriod, ClaimApprovalSystem } from "@/types/enums";
+import { ContributionPeriod, ClaimApprovalSystem, IMicrofundingPool } from "@/types";
 
 interface CreatePoolFormProps {
   onClose: () => void;
-  onPoolCreated?: (newPool: any) => void;
+  onPoolCreated?: (newPool: IMicrofundingPool) => void;
 }
 
 const CreatePoolForm = ({ onClose, onPoolCreated }: CreatePoolFormProps) => {
@@ -53,8 +54,8 @@ const CreatePoolForm = ({ onClose, onPoolCreated }: CreatePoolFormProps) => {
     }
 
     try {
-      const response = await api.post("/api/microfunding/pool", poolData);
-      if (response.data.success) {
+      const response = await api.post<{ success: boolean; message?: string; pool: IMicrofundingPool }>("/api/microfunding/pools", poolData);
+      if (response.data.success && response.data.pool) {
         toast.success(response.data.message || "Pool berhasil dibuat!");
         if (onPoolCreated) {
           onPoolCreated(response.data.pool);

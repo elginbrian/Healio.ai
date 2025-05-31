@@ -37,7 +37,7 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
     return (
         <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-3xl max-w-md w-full relative shadow-2xl overflow-hidden">
-                {/* Header */}
+
                 <div className="px-8 py-6 text-center bg-[var(--color-p-300)]">
                     <button
                         onClick={onClose}
@@ -54,7 +54,7 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
                     </p>
                 </div>
 
-                {/* Form Content */}
+
                 <div className="px-8 py-8">
                     <div className="mb-6">
                         <label className="block text-gray-800 text-lg font-semibold mb-4 text-center">
@@ -78,7 +78,7 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
                         </p>
                     </div>
 
-                    {/* Buttons */}
+
                     <div className="flex gap-4">
                         <button
                             onClick={handleCancel}
@@ -109,3 +109,4 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
 };
 
 export default JoinPoolForm;
+
