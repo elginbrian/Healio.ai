@@ -9,25 +9,25 @@ import Testimony from "@/components/landing_page/testimony/page";
 
 export default function Home() {
   return (
-    <div className="bg-white">
+    <div className=" bg-[var(--color-w-300)]">
       <Navbar />
       <main>
         <section id="hero">
           <Hero />
         </section>
-        <section id="about" className="py-24 px-4 md:px-12">
+        <section id="about" className="py-32 px-4 md:px-12">
           <About />
         </section>
-        <section id="features" className="py-24 bg-gray-50">
+        <section id="features" className="py-32 bg-gray-50">
           <Features />
         </section>
-        <section id="benefit" className="py-24 px-4 md:px-12">
+        <section id="benefit" className="py-32 px-4 md:px-12">
           <Benefit />
         </section>
-        <section id="testimony" className="py-24 bg-gray-50">
+        <section id="testimony" className="py-32 bg-gray-50">
           <Testimony />
         </section>
-        <section id="faq" className="py-24 px-4 md:px-12">
+        <section id="faq" className="py-32 px-4 md:px-12">
           <FAQ />
         </section>
       </main>

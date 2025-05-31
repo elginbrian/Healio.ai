@@ -3,7 +3,7 @@ import React from "react";
 
 const Benefit = () => {
   return (
-    <div className="flex flex-col justify-center items-center">
+    <div className="flex flex-col justify-center items-center ">
       <p className="text-5xl text-[var(--color-p-300)] font-semibold mb-12 text-center">Kelebihan Healio.ai</p>
       <div className="flex flex-col md:flex-row gap-8 md:gap-0">
         <BenefitItem imageSrc={"img/personal_solution.svg"} title={"Solusi Personal"} description={"AI kami menyesuaikan rekomendasi dan analisis berdasarkan profil dan kebutuhan unik Anda."} />
