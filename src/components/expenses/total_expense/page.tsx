@@ -56,9 +56,6 @@ const TotalExpenseCard = ({ dataVersion }: TotalExpenseCardProps) => {
   }, [dataVersion]);
 
   const handleViewDetail = () => {
-    // Navigate to a detailed expense page or expand the current view
-    // For now, we'll just show all expenses by setting the activeTab to "all" in the parent component
-    // This could be improved by creating a dedicated detail page or modal
     router.push("/dashboard/expenses?view=detail");
   };
 
@@ -105,4 +102,5 @@ const TotalExpenseCard = ({ dataVersion }: TotalExpenseCardProps) => {
 };
 
 export default TotalExpenseCard;
+
 

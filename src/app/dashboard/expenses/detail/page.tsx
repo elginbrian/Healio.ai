@@ -35,14 +35,12 @@ const DetailExpensePage = () => {
       setIsLoading(true);
       setError(null);
       try {
-        // First fetch the summary to get the total
         const summaryResponse = await api.get(`/api/expenses/summary?period=${period}`);
         if (summaryResponse.data.success) {
           setTotalAmount(summaryResponse.data.summary.totalSpending);
           setPeriodLabel(summaryResponse.data.summary.periodLabel);
         }
 
-        // Then fetch all expenses for this period
         const startDate = summaryResponse.data.summary.dateRange?.start;
         const endDate = summaryResponse.data.summary.dateRange?.end;
 
@@ -89,7 +87,7 @@ const DetailExpensePage = () => {
   };
 
   const getCategoryIcon = (category: ExpenseCategory): React.ReactElement => {
-    return <div className="p-2.5 bg-gray-100 rounded-full">{/* Icon based on category */}</div>;
+    return <div className="p-2.5 bg-gray-100 rounded-full"></div>;
   };
 
   interface DateFormatOptions {
@@ -167,7 +165,7 @@ const DetailExpensePage = () => {
               {expenses.map((expense) => (
                 <div key={expense._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
-                    <div className="p-2.5 bg-gray-100 rounded-full mr-3">{/* Use appropriate icon based on category */}</div>
+                    <div className="p-2.5 bg-gray-100 rounded-full mr-3"></div>
                     <div>
                       <p className="font-semibold text-gray-800">{expense.medicine_name || expense.facility_name || expense.category}</p>
                       <p className="text-xs text-gray-500">
@@ -192,3 +190,4 @@ const DetailExpensePage = () => {
 };
 
 export default DetailExpensePage;
+

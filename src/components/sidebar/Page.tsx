@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import SidebarItem from "./sidebar_item/page";
 import { usePathname, useRouter } from "next/navigation";
-import { FaUserCircle, FaChevronRight, FaChevronLeft } from "react-icons/fa";
+import { FaUserCircle, FaChevronRight, FaChevronLeft, FaUser, FaMoneyBill } from "react-icons/fa";
 
 const Sidebar = () => {
   const router = useRouter();
@@ -20,6 +20,8 @@ const Sidebar = () => {
       setActiveMenu("expenses");
     } else if (pathname.includes("/dashboard/profile")) {
       setActiveMenu("profile");
+    } else if (pathname.includes("/dashboard/community")) {
+      setActiveMenu("community");
     }
   }, [pathname]);
 
@@ -37,30 +39,24 @@ const Sidebar = () => {
       <div className="flex flex-col">
         <div className="p-6 flex items-center justify-center">
           <img src="/img/logo.svg" className="w-12 h-12" alt="logo" />
-          {expanded && <span className="ml-3 text-lg font-semibold text-[var(--color-p-300)] truncate">Healio</span>}
+          {expanded && <span className="ml-3 text-lg font-semibold text-[var(--color-p-300)] truncate">Healio.ai</span>}
         </div>
 
         <div className="px-6 mt-8">
           <SidebarItem name="facilities" label="Fasilitas Kesehatan" active={activeMenu === "facilities"} onClick={() => handleNavigation("facilities")} activeSrc="/img/home_white.svg" inactiveSrc="/img/home_pink.svg" expanded={expanded} />
 
-          <SidebarItem
-            name="microfunding"
-            label="Microfunding"
-            active={activeMenu === "microfunding"}
-            onClick={() => handleNavigation("microfunding")}
-            activeSrc="/img/people_white.svg"
-            inactiveSrc="/img/people_pink.svg"
-            expanded={expanded}
-          />
+          <SidebarItem name="microfunding" label="Dana Komunal" active={activeMenu === "microfunding"} onClick={() => handleNavigation("microfunding")} icon={FaMoneyBill} expanded={expanded} />
 
           <SidebarItem name="expenses" label="Expense Tracker" active={activeMenu === "expenses"} onClick={() => handleNavigation("expenses")} activeSrc="/img/graph_white.svg" inactiveSrc="/img/graph_pink.svg" expanded={expanded} />
+
+          <SidebarItem name="komunitas" label="Komunitas" active={activeMenu === "community"} onClick={() => handleNavigation("community")} icon={FaUser} expanded={expanded} />
         </div>
       </div>
       <div className="px-6 mb-6">
         <SidebarItem name="profile" label="Profil" active={activeMenu === "profile"} onClick={() => handleNavigation("profile")} icon={FaUserCircle} expanded={expanded} />
       </div>
 
-      <div className="absolute top-1/2 right-0 transform -translate-y-1/2 flex items-center">
+      <div className="absolute top-[60%] right-0 transform -translate-y-1/2 flex items-center">
         <button onClick={toggleSidebar} className="bg-white hover:bg-gray-50 border border-gray-200 rounded-l-full h-20 w-7 flex items-center justify-center shadow-md">
           {expanded ? <FaChevronLeft size={16} className="text-[var(--color-p-300)]" /> : <FaChevronRight size={16} className="text-[var(--color-p-300)]" />}
         </button>

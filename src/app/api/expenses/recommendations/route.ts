@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
     }
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    // Get last 3 months expenses
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
@@ -45,7 +44,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Calculate total by category
     const categoryTotals: Record<string, number> = {};
     expenses.forEach((expense) => {
       const category = expense.category;
@@ -55,10 +53,8 @@ export async function GET(request: NextRequest) {
       categoryTotals[category] += expense.total_price;
     });
 
-    // Generate recommendations based on spending patterns
     const recommendations: Recommendation[] = [];
 
-    // Check if medication expenses are high
     if (categoryTotals[ExpenseCategory.MEDICATION] > 500000) {
       recommendations.push({
         title: "Pertimbangkan obat generik",
@@ -69,7 +65,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Check for frequent consultations
     const consultationCount = expenses.filter((e) => e.category === ExpenseCategory.CONSULTATION).length;
     if (consultationCount > 5) {
       recommendations.push({
@@ -80,7 +75,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Add generic recommendation if no specific ones
     if (recommendations.length === 0) {
       recommendations.push({
         title: "Pengeluaran kesehatan Anda terlihat baik",
@@ -107,3 +101,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

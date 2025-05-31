@@ -77,7 +77,6 @@ const UploadReceipt = ({ onUploadSuccess }: UploadReceiptProps) => {
       });
 
       if (response.data.success) {
-        // Show information about what was processed
         const itemCount = response.data.expenses?.length || 0;
         const totalAmount = response.data.expenses?.reduce((sum: number, exp: any) => sum + exp.total_price, 0) || 0;
 
@@ -91,7 +90,6 @@ const UploadReceipt = ({ onUploadSuccess }: UploadReceiptProps) => {
           { id: toastId, duration: 4000 }
         );
 
-        // Call the callback to refresh expense data
         onUploadSuccess();
         setSelectedFile(null);
         setPreviewUrl(null);
@@ -150,3 +148,4 @@ const UploadReceipt = ({ onUploadSuccess }: UploadReceiptProps) => {
 };
 
 export default UploadReceipt;
+

@@ -9,7 +9,6 @@ import path from "path";
 import { writeFile } from "fs/promises";
 import fs from "fs/promises";
 
-// Type for parsed receipt data from OCR/AI
 interface ParsedReceiptData {
   items: {
     name: string;
@@ -23,10 +22,7 @@ interface ParsedReceiptData {
   total_amount?: number;
 }
 
-// Function to process receipt with AI (mock implementation)
 async function processReceiptWithGemini(filePath: string): Promise<ParsedReceiptData | null> {
-  // This would be your actual AI implementation
-  // For now, let's return mock data
   return {
     items: [
       {
@@ -91,7 +87,6 @@ export async function POST(request: NextRequest) {
 
     await writeFile(filePath, buffer);
 
-    // Create a new receipt document
     const newReceipt = new Receipt({
       user_id: userObjectId,
       image_url: publicImageUrl,
@@ -104,7 +99,6 @@ export async function POST(request: NextRequest) {
     let createdExpenseRecords = [];
 
     try {
-      // Process the receipt image with AI
       extractedData = await processReceiptWithGemini(filePath);
 
       if (!extractedData || !extractedData.items || extractedData.items.length === 0) {
@@ -114,7 +108,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, message: "Tidak dapat mengekstrak data dari struk. Coba lagi dengan gambar yang lebih jelas." }, { status: 422 });
       }
 
-      // Create expense records from extracted data
       const transactionDate = extractedData.transaction_date ? new Date(extractedData.transaction_date) : new Date();
 
       const expensePromises = extractedData.items.map(async (item) => {
@@ -134,7 +127,6 @@ export async function POST(request: NextRequest) {
 
       createdExpenseRecords = await Promise.all(expensePromises);
 
-      // Update receipt status to processed
       newReceipt.status = ReceiptStatus.PROCESSED;
       newReceipt.ocr_raw_text = JSON.stringify(extractedData);
       await newReceipt.save();
@@ -170,3 +162,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: "Terjadi kesalahan pada server saat mengunggah struk." }, { status: 500 });
   }
 }
+

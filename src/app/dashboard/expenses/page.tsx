@@ -12,9 +12,7 @@ import React, { useState, useCallback } from "react";
 const ExpensePage = () => {
   const [dataVersion, setDataVersion] = useState(0);
 
-  // This callback is called when receipt upload is successful
   const handleReceiptUploadSuccess = useCallback(() => {
-    // Increment dataVersion to trigger all components to refresh their data
     setDataVersion((prevVersion) => prevVersion + 1);
   }, []);
 
@@ -45,4 +43,5 @@ const ExpensePage = () => {
 };
 
 export default ExpensePage;
+
 

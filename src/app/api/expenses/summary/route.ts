@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "current_month";
 
-    // Calculate date range based on period
     const now = new Date();
     let startDate = new Date();
     let endDate = new Date();
@@ -49,7 +48,6 @@ export async function GET(request: NextRequest) {
         periodLabel = "Bulan Ini";
     }
 
-    // Query for calculating total spending
     const userObjectId = new mongoose.Types.ObjectId(userId);
     const result = await ExpenseRecord.aggregate([
       {
@@ -57,7 +55,6 @@ export async function GET(request: NextRequest) {
           user_id: userObjectId,
           $or: [
             { transaction_date: { $gte: startDate, $lte: endDate } },
-            // Also consider createdAt if transaction_date is not available
             { $and: [{ transaction_date: { $exists: false } }, { createdAt: { $gte: startDate, $lte: endDate } }] },
           ],
         },
@@ -97,3 +94,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

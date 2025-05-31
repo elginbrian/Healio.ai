@@ -66,10 +66,10 @@ const expenseRecordSchema = new Schema<IExpenseRecordDocument>(
   }
 );
 
-// Create compound index for date range queries
 expenseRecordSchema.index({ user_id: 1, transaction_date: 1 });
 expenseRecordSchema.index({ user_id: 1, createdAt: 1 });
 
 const ExpenseRecord: Model<IExpenseRecordDocument> = models.ExpenseRecord || mongoose.model<IExpenseRecordDocument>("ExpenseRecord", expenseRecordSchema);
 
 export default ExpenseRecord;
+
