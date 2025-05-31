@@ -2,7 +2,7 @@ import React from "react";
 import NotifProfile from "@/components/notification_profile/page";
 import { Calendar } from "lucide-react";
 
-const ClaimHeader = () => (
+const CommunityHeader = () => (
   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
     <div>
       <h1 className="text-3xl font-semibold text-[var(--color-p-300)]">Pelacakan Pengeluaran</h1>
@@ -19,4 +19,4 @@ const ClaimHeader = () => (
   </div>
 );
 
-export default ClaimHeader;
+export default CommunityHeader;
