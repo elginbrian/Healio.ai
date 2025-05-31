@@ -8,7 +8,7 @@ const JoinPoolSuccess = ({ onClose }: JoinPoolSuccessProps) => {
     return (
         <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-3xl max-w-md w-full relative shadow-2xl p-8 text-center">
-                {/* Success Icon/Image */}
+
                 <div className="mb-6 flex justify-center">
                     <img 
                         src="/img/document.svg" 
@@ -17,7 +17,7 @@ const JoinPoolSuccess = ({ onClose }: JoinPoolSuccessProps) => {
                     />
                 </div>
 
-                {/* Success Message */}
+
                 <div className="mb-8">
                     <h2 className="text-2xl font-bold text-pink-500 mb-4">
                         Permintaan Anda telah dikirim
@@ -27,7 +27,7 @@ const JoinPoolSuccess = ({ onClose }: JoinPoolSuccessProps) => {
                     </p>
                 </div>
 
-                {/* Button */}
+
                 <button
                     onClick={onClose}
                     className="w-full bg-gradient-to-r from-pink-400 to-pink-500 text-white font-semibold py-4 px-6 rounded-full hover:from-pink-500 hover:to-pink-600 transition duration-300 text-lg"

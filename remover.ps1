@@ -49,7 +49,7 @@ function Is-ImportantComment {
     $patterns = @(
         'godoc',
         'swagger:',
-        '@\w+',
+        # '@\w+',
         '\+\w+',
         'TODO:',
         'FIXME:',

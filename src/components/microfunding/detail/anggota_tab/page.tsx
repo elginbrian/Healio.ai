@@ -21,7 +21,7 @@ const members: Member[] = [
     contribution: 200000,
     claim: 0,
     isAdmin: true,
-    profileImage: '/img/hospital_dummy.png', // Replace with actual path to dummy image if needed
+    profileImage: '/img/hospital_dummy.png',
   },
   {
     name: 'Johan Arizona',
@@ -69,7 +69,7 @@ const AnggotaTab = () => {
         </div>
       </div>
 
-      <div className="overflow-y-auto max-h-96 pr-2 custom-scrollbar"> {/* Added custom-scrollbar for styling */}
+      <div className="overflow-y-auto max-h-96 pr-2 custom-scrollbar">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50 sticky top-0">
             <tr>
