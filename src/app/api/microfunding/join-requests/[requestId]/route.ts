@@ -1,4 +1,3 @@
-// src/app/api/microfunding/join-requests/[requestId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db";
 import { getUserIdFromToken } from "@/lib/auth-util";
@@ -8,15 +7,10 @@ import JoinRequest from "@/models/join-request";
 import MicrofundingPool from "@/models/microfunding-pool";
 import PoolMember from "@/models/pool-member";
 
-// Interface "Context" tidak lagi diperlukan dan telah dihapus.
-
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { requestId: string } } // Ini adalah cara yang benar untuk mendapatkan params
-) {
+export async function PATCH(request: NextRequest, context: { params: { requestId: string } }) {
   try {
     await connectToDatabase();
-    const { requestId } = params; // Langsung akses requestId dari params
+    const { requestId } = context.params;
 
     const adminUserId = getUserIdFromToken(request.headers.get("Authorization"));
     if (!adminUserId) {
@@ -28,7 +22,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status: newStatus } = body; // status baru: 'APPROVED' atau 'REJECTED'
+    const { status: newStatus } = body;
 
     if (!newStatus || !Object.values(JoinRequestStatus).includes(newStatus as JoinRequestStatus)) {
       return NextResponse.json({ success: false, message: "Status baru tidak valid." }, { status: 400 });
