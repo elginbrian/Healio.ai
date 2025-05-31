@@ -8,16 +8,15 @@ import JoinRequest from "@/models/join-request";
 import MicrofundingPool from "@/models/microfunding-pool";
 import PoolMember from "@/models/pool-member";
 
-interface Context {
-  params: {
-    requestId: string;
-  };
-}
+// Interface "Context" tidak lagi diperlukan dan telah dihapus.
 
-export async function PATCH(request: NextRequest, context: Context) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { requestId: string } } // Ini adalah cara yang benar untuk mendapatkan params
+) {
   try {
     await connectToDatabase();
-    const { requestId } = context.params;
+    const { requestId } = params; // Langsung akses requestId dari params
 
     const adminUserId = getUserIdFromToken(request.headers.get("Authorization"));
     if (!adminUserId) {
