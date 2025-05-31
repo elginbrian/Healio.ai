@@ -16,6 +16,9 @@ jobs:
     if: github.event_name == 'push'
     env:
       BRANCH: ${{ github.ref_name }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+    outputs:
+      IMAGE_NAME_WITH_TAG: ${{ steps.build_image.outputs.IMAGE_NAME_WITH_TAG }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,48 +29,63 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push Docker image
+        id: build_image
         run: |
           echo "Building image for branch: $BRANCH"
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/healio-ai-app"
+          IMAGE_NAME_BASE="$DOCKER_USERNAME/healio-ai-app" # Use env var for username
 
-          case "$BRANCH" in
-            "master")
-              echo "Building production image..."
-              docker build -t ${IMAGE_NAME}:latest -f Dockerfile .
-              docker push ${IMAGE_NAME}:latest
-              ;;
-            "dev")
-              echo "Building development image..."
-              docker build -t ${IMAGE_NAME}:dev -f Dockerfile .
-              docker push ${IMAGE_NAME}:dev
-              ;;
-            *)
-              echo "Branch $BRANCH not recognized for Docker build, skipping."
-              exit 0
-              ;;
-          esac
+          IMAGE_TAG=""
+          if [ "$BRANCH" = "master" ]; then
+            IMAGE_TAG="latest"
+          elif [ "$BRANCH" = "dev" ]; then
+            IMAGE_TAG="dev"
+          else
+            echo "Branch $BRANCH not recognized for Docker build, skipping."
+            exit 0
+          fi
+
+          FULL_IMAGE_NAME_WITH_TAG="${IMAGE_NAME_BASE}:${IMAGE_TAG}"
+          echo "Building and pushing ${FULL_IMAGE_NAME_WITH_TAG}"
+
+          # Pass build-time args for NEXT_PUBLIC_ variables
+          docker buildx build --platform linux/amd64 \
+            --build-arg NEXT_PUBLIC_MIDTRANS_CLIENT_KEY_SANDBOX=${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }} \
+            -t ${FULL_IMAGE_NAME_WITH_TAG} \
+            -f Dockerfile . --push
+
+          echo "IMAGE_NAME_WITH_TAG=${FULL_IMAGE_NAME_WITH_TAG}" >> $GITHUB_OUTPUT
 
   deploy:
     needs: docker
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref_name == 'master' || github.ref_name == 'dev')
+    env:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT }}
+      JWT_SECRET_VALUE: ${{ secrets.JWT_SECRET }}
+      GEMINI_API_KEY_VALUE: ${{ secrets.GEMINI_API_KEY }}
+      MIDTRANS_CLIENT_KEY_SANDBOX_VALUE: ${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }}
+      MIDTRANS_SERVER_KEY_SANDBOX_VALUE: ${{ secrets.MIDTRANS_SERVER_KEY_SANDBOX }}
     steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT }}
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          key: ${{ env.SERVER_SSH_KEY }}
+          port: ${{ env.SERVER_PORT }}
           script: |
-            set -e
-            trap 'echo "An error occurred during deployment. Exiting..." && exit 1' ERR
+            set -e # Exit immediately if a command exits with a non-zero status.
+            echo "Starting deployment for branch: ${{ github.ref_name }}"
 
             SCRIPT_BRANCH_NAME="${{ github.ref_name }}"
-            REPO_URL="https://github.com/elginbrian/Healio.ai.git"
-
-            echo "Deploying branch from SCRIPT_BRANCH_NAME: $SCRIPT_BRANCH_NAME"
+            IMAGE_NAME_FROM_PREVIOUS_JOB="${{ needs.docker.outputs.IMAGE_NAME_WITH_TAG }}" # Get image name from docker job
 
             if [ -z "$SCRIPT_BRANCH_NAME" ]; then
               echo "Critical Error: SCRIPT_BRANCH_NAME is empty."
@@ -75,74 +93,50 @@ jobs:
             fi
 
             if [ "$SCRIPT_BRANCH_NAME" = "master" ]; then
-              REPO_DIR="healio-ai-prod" 
-              APP_HOST_PORT="3010"
-              IMAGE_TAG="latest" 
-              TARGET_NODE_ENV="production"
+              REPO_DIR_NAME="healio-ai-prod"
+              APP_HOST_PORT_VALUE="3010"
+              TARGET_NODE_ENV_VALUE="production"
             elif [ "$SCRIPT_BRANCH_NAME" = "dev" ]; then
-              REPO_DIR="healio-ai-dev"
-              APP_HOST_PORT="3011"
-              IMAGE_TAG="dev"
-              TARGET_NODE_ENV="development"
+              REPO_DIR_NAME="healio-ai-dev"
+              APP_HOST_PORT_VALUE="3011"
+              TARGET_NODE_ENV_VALUE="development"
             else
               echo "Error: Branch '$SCRIPT_BRANCH_NAME' is not 'master' or 'dev'."
               exit 1
             fi
 
-            echo "Preparing deployment directory: $REPO_DIR"
-            if [ -d "$REPO_DIR" ]; then
-              echo "Removing existing directory: $REPO_DIR"
-              rm -rf "$REPO_DIR"
+            if [ ! -d "$REPO_DIR_NAME" ]; then
+              mkdir -p "$REPO_DIR_NAME"
             fi
+            cd "$REPO_DIR_NAME"
+            echo "Operating in directory: $(pwd)"
 
-            echo "Cloning repository $REPO_URL branch $SCRIPT_BRANCH_NAME into $REPO_DIR..."
-            git clone --branch $SCRIPT_BRANCH_NAME $REPO_URL $REPO_DIR
-
-            cd $REPO_DIR
-            echo "Successfully changed directory to $REPO_DIR"
-
-            echo "Creating/Updating .env file in $REPO_DIR/.env ..."
-            cat > .env <<-EOF
-            MONGODB_URI=mongodb://mongodb:27017/healio_db
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            NODE_ENV=${TARGET_NODE_ENV}
-            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            MIDTRANS_CLIENT_KEY_SANDBOX=${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }}
-            MIDTRANS_SERVER_KEY_SANDBOX=${{ secrets.MIDTRANS_SERVER_KEY_SANDBOX }}
-            NEXT_PUBLIC_MIDTRANS_CLIENT_KEY_SANDBOX=${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }}
+            echo "Creating .env file for docker-compose..."
+            cat > .env <<EOF
+            # For docker-compose.yml variable substitution
+            APP_IMAGE_NAME_WITH_TAG=${IMAGE_NAME_FROM_PREVIOUS_JOB}
+            APP_HOST_PORT=${APP_HOST_PORT_VALUE}
+            APP_CONTAINER_PORT=3000
+            MONGO_HOST_PORT=27017 # Ensure this doesn't conflict if running multiple instances
+            MONGO_INITDB_DATABASE=healio_db_${SCRIPT_BRANCH_NAME} # Use different DB for dev/prod
+            TARGET_NODE_ENV=${TARGET_NODE_ENV_VALUE}
+            JWT_SECRET_FOR_COMPOSE=${{ env.JWT_SECRET_VALUE }}
+            GEMINI_API_KEY_FOR_COMPOSE=${{ env.GEMINI_API_KEY_VALUE }}
+            MIDTRANS_CLIENT_KEY_SANDBOX_FOR_COMPOSE=${{ env.MIDTRANS_CLIENT_KEY_SANDBOX_VALUE }}
+            MIDTRANS_SERVER_KEY_SANDBOX_FOR_COMPOSE=${{ env.MIDTRANS_SERVER_KEY_SANDBOX_VALUE }}
+            NEXT_PUBLIC_MIDTRANS_CLIENT_KEY_SANDBOX_FOR_COMPOSE=${{ env.MIDTRANS_CLIENT_KEY_SANDBOX_VALUE }}
             EOF
 
-            export DOCKER_IMAGE_TAG=${IMAGE_TAG} 
-            export APP_CONTAINER_PORT="3000"
-            export APP_HOST_PORT=${APP_HOST_PORT}
-            export MONGO_HOST_PORT="27017"
-            export MONGO_INITDB_DATABASE="healio_db"
-            export TARGET_NODE_ENV=${TARGET_NODE_ENV}
-            export JWT_SECRET_FOR_COMPOSE="${{ secrets.JWT_SECRET }}"
-            export DOCKER_USERNAME_ENV="${{ secrets.DOCKER_USERNAME }}"
-            export GEMINI_API_KEY_FOR_COMPOSE="${{ secrets.GEMINI_API_KEY }}"
-            export MIDTRANS_CLIENT_KEY_SANDBOX="${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }}"
-            export MIDTRANS_SERVER_KEY_SANDBOX="${{ secrets.MIDTRANS_SERVER_KEY_SANDBOX }}"
+            echo "Pulling the specific Docker image: ${IMAGE_NAME_FROM_PREVIOUS_JOB}"
+            docker pull ${IMAGE_NAME_FROM_PREVIOUS_JOB}
 
-            echo "Environment variables for docker-compose set."
-            echo "DOCKER_USERNAME_ENV=${DOCKER_USERNAME_ENV}"
-            echo "DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}"
-            echo "APP_HOST_PORT=${APP_HOST_PORT}"
-            echo "TARGET_NODE_ENV=${TARGET_NODE_ENV}"
+            echo "Pulling latest mongo image (if not present)..."
+            docker pull mongo:latest
 
-            echo "Stopping and removing old containers and volumes (database will be reset)..."
-            docker-compose down -v --remove-orphans || true
-
-            echo "Pruning unused Docker images..."
-            docker images prune -af || true
-
-            echo "Pulling base MongoDB image (if needed)..."
-            docker-compose pull mongodb || true 
-
-            echo "Building app and cron-worker images locally on the server..."
-            docker-compose build --no-cache app cron-worker
+            echo "Stopping and removing old containers..."
+            docker-compose -p healio_${SCRIPT_BRANCH_NAME} down -v --remove-orphans || true 
 
             echo "Starting services with docker-compose..."
-            docker-compose up -d --force-recreate
+            docker-compose -p healio_${SCRIPT_BRANCH_NAME} up -d --force-recreate
 
             echo "Deployment for branch $SCRIPT_BRANCH_NAME completed successfully."
