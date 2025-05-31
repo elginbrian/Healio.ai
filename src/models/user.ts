@@ -1,3 +1,4 @@
+// src/models/user.ts
 import { Gender, IUser } from "@/types";
 import mongoose, { Schema, models, Model } from "mongoose";
 
@@ -36,9 +37,7 @@ const userSchema = new Schema<IUser>(
     },
     ktp_number: {
       type: String,
-      unique: true,
-      sparse: true,
-      default: null,
+      default: "",
     },
     address: {
       type: String,
