@@ -1,4 +1,3 @@
-// src/models/user.ts
 import { Gender, IUser } from "@/types";
 import mongoose, { Schema, models, Model } from "mongoose";
 
@@ -111,6 +110,14 @@ const userSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
+  }
+);
+
+userSchema.index(
+  { ktp_number: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { ktp_number: { $ne: "" } },
   }
 );
 
