@@ -27,7 +27,7 @@ jobs:
             trap 'echo "An error occurred during MongoDB deployment. Exiting..." && exit 1' ERR
 
             SCRIPT_BRANCH_NAME="${{ github.ref_name }}"
-            REPO_URL="https://github.com/elginbrian/Healio.ai.git" # Pastikan ini URL repo Anda
+            REPO_URL="https://github.com/elginbrian/Healio.ai.git"
             TARGET_DIR="healio-ai-app-mongo"
 
             echo "Deploying MongoDB for branch: $SCRIPT_BRANCH_NAME from $REPO_URL"
@@ -37,20 +37,12 @@ jobs:
               exit 1
             fi
 
-            # Variabel untuk kredensial MongoDB dari GitHub Secrets
-            MONGO_ROOT_USERNAME_SECRET=""
-            MONGO_ROOT_PASSWORD_SECRET=""
-
             if [ "$SCRIPT_BRANCH_NAME" = "master" ]; then
               MONGO_HOST_PORT_VALUE="27017"
               MONGO_INITDB_DATABASE_VALUE="healio_db_prod"
-              MONGO_ROOT_USERNAME_SECRET="${{ secrets.MONGO_PROD_USER || 'admin' }}"
-              MONGO_ROOT_PASSWORD_SECRET="${{ secrets.MONGO_PROD_PASSWORD || 'securepassword' }}" 
             elif [ "$SCRIPT_BRANCH_NAME" = "dev" ]; then
               MONGO_HOST_PORT_VALUE="27018"
               MONGO_INITDB_DATABASE_VALUE="healio_db_dev"
-              MONGO_ROOT_USERNAME_SECRET="${{ secrets.MONGO_DEV_USER || 'admin' }}"
-              MONGO_ROOT_PASSWORD_SECRET="${{ secrets.MONGO_DEV_PASSWORD || 'devpassword' }}"
             else
               echo "Error: Branch '$SCRIPT_BRANCH_NAME' is not 'master' or 'dev'. MongoDB deployment skipped."
               exit 1
@@ -60,7 +52,6 @@ jobs:
             if [ -d "$TARGET_DIR" ]; then
               echo "Found existing directory: $TARGET_DIR. Will update content."
               cd "$TARGET_DIR"
-              # Hapus dan clone ulang untuk kebersihan
               cd ..
               rm -rf "$TARGET_DIR"
               echo "Cloning repository $REPO_URL (branch $SCRIPT_BRANCH_NAME) into $TARGET_DIR..."
@@ -77,26 +68,26 @@ jobs:
                 echo "Error: docker-compose.yml not found in the cloned repository at $(pwd)/docker-compose.yml"
                 exit 1
             fi
+
             echo "Using docker-compose.yml found in cloned repository."
+            cat ./docker-compose.yml # Cetak konten untuk verifikasi
 
             echo "Creating .env file for MongoDB in $TARGET_DIR/.env ..."
             cat > .env <<-EOF
             MONGO_HOST_PORT=${MONGO_HOST_PORT_VALUE}
             MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE_VALUE}
-            MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME_SECRET}
-            MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD_SECRET}
             EOF
 
-            echo "Environment variables for MongoDB docker-compose set (check credentials)."
+            echo "Environment variables for MongoDB docker-compose set for NO AUTH."
 
             echo "Stopping and removing existing MongoDB services (if any)..."
             docker-compose down --remove-orphans || true
 
+
             echo "Pulling latest MongoDB image (if needed)..."
             docker-compose pull mongodb || true
 
-            echo "Starting MongoDB service with docker-compose..."
+            echo "Starting MongoDB service (NO AUTH) with docker-compose..."
             docker-compose up -d --force-recreate mongodb
 
-            echo "MongoDB deployment for branch $SCRIPT_BRANCH_NAME completed successfully."
-            echo "Ensure your Vercel MONGODB_URI uses username: '${MONGO_ROOT_USERNAME_SECRET}' and the correct password."
+            echo "MongoDB deployment (NO AUTH) for branch $SCRIPT_BRANCH_NAME completed successfully."

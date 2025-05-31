@@ -5,12 +5,14 @@ services:
     image: mongo:latest
     container_name: healio_ai_mongodb
     restart: unless-stopped
+    command: mongod --bind_ip_all
     ports:
       - "${MONGO_HOST_PORT:-27017}:27017"
     volumes:
       - healio_ai_mongodb_data:/data/db
     environment:
       - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE:-healio_db}
+
     networks:
       - healio_ai_network
 
