@@ -5,7 +5,6 @@ import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { ContributionPeriod, ClaimApprovalSystem, IMicrofundingPool } from "@/types";
 
-// Export the interface so it can be imported elsewhere
 export interface CreatePoolFormProps {
   onClose: () => void;
   onPoolCreated?: (newPool: IMicrofundingPool) => void;
@@ -294,3 +293,4 @@ const CreatePoolForm = ({ onClose, onPoolCreated }: CreatePoolFormProps) => {
 };
 
 export default CreatePoolForm;
+
