@@ -59,17 +59,22 @@ const UndangAnggotaTab = ({ poolId, poolCode = "#KODEPOOL", isCurrentUserAdmin =
   const handleUpdateRequestStatus = async (requestId: string, newStatus: "APPROVED" | "REJECTED") => {
     setProcessingRequestId(requestId);
     try {
+      console.log(`Sending request to update join request ${requestId} to status: ${newStatus}`);
       const response = await api.patch(`/api/microfunding/join-requests/${requestId}`, { status: newStatus });
+
       if (response.data.success) {
         toast.success(response.data.message);
         fetchPendingRequests();
-        // TODO: Idealnya juga memicu refresh daftar anggota di tab lain jika disetujui
       } else {
         toast.error(response.data.message || `Gagal ${newStatus === "APPROVED" ? "menyetujui" : "menolak"} permintaan.`);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Terjadi kesalahan.");
       console.error(`Error updating request ${requestId} to ${newStatus}:`, error);
+      console.error("Response status:", error.response?.status);
+      console.error("Response data:", error.response?.data);
+
+      const errorMsg = error.response?.data?.message || "Terjadi kesalahan saat memproses permintaan. Silakan coba lagi.";
+      toast.error(errorMsg);
     } finally {
       setProcessingRequestId(null);
     }
