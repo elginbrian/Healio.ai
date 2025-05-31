@@ -13,23 +13,30 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleJoin = async () => {
+    console.log("JoinPoolForm: handleJoin triggered. Kode Pool:", kodePool);
+
     if (!kodePool.trim()) {
       toast.error("Masukkan kode pool terlebih dahulu!");
+      console.log("JoinPoolForm: Validation failed - kodePool is empty.");
       return;
     }
 
     const poolCode = kodePool.trim().toUpperCase();
     if (poolCode.length < 6 || poolCode.length > 8) {
       toast.error("Kode pool harus terdiri dari 6-8 karakter.");
+      console.log("JoinPoolForm: Validation failed - poolCode length incorrect.");
       return;
     }
 
+    console.log("JoinPoolForm: Validations passed. Attempting to send API request...");
     setIsLoading(true);
 
     try {
       const response = await api.post("/api/microfunding/join-requests", {
         pool_code: poolCode,
       });
+
+      console.log("JoinPoolForm: API response received:", response);
 
       if (response.data.success) {
         toast.success(response.data.message || "Permintaan bergabung telah dikirim!");
@@ -38,11 +45,14 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
         toast.error(response.data.message || "Gagal mengirim permintaan bergabung.");
       }
     } catch (error: any) {
-      console.error("Error joining pool:", error);
+      console.error("JoinPoolForm: Error joining pool:", error);
+      console.error("JoinPoolForm: Error status:", error.response?.status);
+      console.error("JoinPoolForm: Error data:", error.response?.data);
       const errorMsg = error.response?.data?.message || "Terjadi kesalahan saat mengirim permintaan.";
       toast.error(errorMsg);
     } finally {
       setIsLoading(false);
+      console.log("JoinPoolForm: handleJoin finished. isLoading set to false.");
     }
   };
 
