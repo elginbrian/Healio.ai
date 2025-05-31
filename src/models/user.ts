@@ -38,7 +38,7 @@ const userSchema = new Schema<IUser>(
       type: String,
       unique: true,
       sparse: true,
-      default: "",
+      default: null,
     },
     address: {
       type: String,
@@ -148,4 +148,3 @@ userSchema.pre("findOneAndUpdate", function (next) {
 const User: Model<IUser> = models.User || mongoose.model<IUser>("User", userSchema);
 
 export default User;
-
