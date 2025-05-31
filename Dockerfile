@@ -10,12 +10,10 @@ RUN npm install
 
 COPY . .
 
-RUN if [ "$NODE_ENV" = "production" ]; then npm run build; fi
+# Only build in production mode and ignore failures in development
+RUN if [ "$NODE_ENV" = "production" ]; then npm run build || exit 1; fi
 
 EXPOSE 3000
 
-CMD if [ "$NODE_ENV" = "production" ]; then \
-        npm start; \
-    else \
-        npm run dev; \
-    fi
+# Use JSON format for CMD to properly handle signals
+CMD ["sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then npm start; else npm run dev; fi"]
