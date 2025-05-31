@@ -27,7 +27,7 @@ jobs:
             trap 'echo "An error occurred during MongoDB deployment. Exiting..." && exit 1' ERR
 
             SCRIPT_BRANCH_NAME="${{ github.ref_name }}"
-            REPO_URL="https://github.com/elginbrian/Healio.ai.git" 
+            REPO_URL="https://github.com/elginbrian/Healio.ai.git" # Pastikan ini URL repo Anda
             TARGET_DIR="healio-ai-app-mongo" # Nama direktori bisa disesuaikan
 
             echo "Deploying MongoDB for branch: $SCRIPT_BRANCH_NAME from $REPO_URL"
@@ -50,21 +50,25 @@ jobs:
 
             echo "Preparing deployment directory: $TARGET_DIR"
             if [ -d "$TARGET_DIR" ]; then
-              echo "Removing existing directory: $TARGET_DIR"
+              echo "Found existing directory: $TARGET_DIR. Will update content."
+              cd "$TARGET_DIR"
+              echo "Pulling latest changes for branch $SCRIPT_BRANCH_NAME..."
+              # Hapus perubahan lokal jika ada, lalu pull. Atau hapus dan clone ulang.
+              # Untuk kesederhanaan dan kebersihan, hapus dan clone ulang lebih aman.
+              cd .. # Kembali ke parent dari TARGET_DIR
               rm -rf "$TARGET_DIR"
+              echo "Cloning repository $REPO_URL (branch $SCRIPT_BRANCH_NAME) into $TARGET_DIR..."
+              git clone --branch $SCRIPT_BRANCH_NAME $REPO_URL $TARGET_DIR
+            else
+              echo "Cloning repository $REPO_URL (branch $SCRIPT_BRANCH_NAME) into $TARGET_DIR..."
+              git clone --branch $SCRIPT_BRANCH_NAME $REPO_URL $TARGET_DIR
             fi
-
-            echo "Cloning repository $REPO_URL (branch $SCRIPT_BRANCH_NAME) into $TARGET_DIR..."
-            # Jika repositori Anda private, Anda mungkin perlu menggunakan PAT (Personal Access Token)
-            # atau kunci SSH deploy untuk git clone. Untuk repo publik, HTTPS URL sudah cukup.
-            git clone --branch $SCRIPT_BRANCH_NAME $REPO_URL $TARGET_DIR
 
             cd "$TARGET_DIR"
             echo "Successfully changed directory to $TARGET_DIR"
             echo "Current directory content:"
             ls -la
 
-            # Pastikan docker-compose.yml ada di root direktori yang di-clone
             if [ ! -f "./docker-compose.yml" ]; then
                 echo "Error: docker-compose.yml not found in the cloned repository at $(pwd)/docker-compose.yml"
                 exit 1
@@ -72,9 +76,11 @@ jobs:
             echo "Using docker-compose.yml found in cloned repository."
 
             echo "Creating .env file for MongoDB in $TARGET_DIR/.env ..."
+            # Menggunakan sintaks yang benar untuk variabel shell di dalam heredoc .env
+            # Variabel ini akan dibaca oleh docker-compose
             cat > .env <<-EOF
-            MONGO_HOST_PORT=\${MONGO_HOST_PORT_VALUE}
-            MONGO_INITDB_DATABASE=\${MONGO_INITDB_DATABASE_VALUE}
+            MONGO_HOST_PORT=${MONGO_HOST_PORT_VALUE}
+            MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE_VALUE}
             # Jika Anda menggunakan autentikasi MongoDB, tambahkan:
             # MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_USER }}
             # MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_PASSWORD }}
@@ -82,11 +88,15 @@ jobs:
 
             echo "Environment variables for MongoDB docker-compose set."
 
+            echo "Stopping and removing existing MongoDB services defined in docker-compose.yml (if any)..."
+            docker-compose down --remove-orphans || true
+
             echo "Pulling latest MongoDB image (if needed)..."
             docker-compose pull mongodb || true
 
             echo "Starting MongoDB service with docker-compose..."
-            # Variabel MONGO_HOST_PORT dan MONGO_INITDB_DATABASE akan diambil dari file .env oleh docker-compose
+            # --force-recreate mungkin tidak lagi sepenuhnya diperlukan setelah 'down',
+            # tapi tidak berbahaya untuk disertakan.
             docker-compose up -d --force-recreate mongodb
 
             echo "MongoDB deployment for branch $SCRIPT_BRANCH_NAME completed successfully."
