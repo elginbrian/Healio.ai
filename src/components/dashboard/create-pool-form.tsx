@@ -54,7 +54,7 @@ const CreatePoolForm = ({ onClose, onPoolCreated }: CreatePoolFormProps) => {
     }
 
     try {
-      const response = await api.post<{ success: boolean; message?: string; pool: IMicrofundingPool }>("/api/microfunding/pools", poolData);
+      const response = await api.post<{ success: boolean; message?: string; pool: IMicrofundingPool }>("/api/microfunding/pool", poolData);
       if (response.data.success && response.data.pool) {
         toast.success(response.data.message || "Pool berhasil dibuat!");
         if (onPoolCreated) {
@@ -293,4 +293,3 @@ const CreatePoolForm = ({ onClose, onPoolCreated }: CreatePoolFormProps) => {
 };
 
 export default CreatePoolForm;
-
