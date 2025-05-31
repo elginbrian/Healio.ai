@@ -37,18 +37,6 @@ async function createMidtransSnapTransaction(
       email: user.email,
       phone: user.phone || "N/A", // Tambahkan nomor telepon jika ada
     },
-    // Anda bisa menambahkan item_details jika perlu
-    // item_details: [{
-    //   id: `contrib-${contributionId}`,
-    //   price: Math.round(amount),
-    //   quantity: 1,
-    //   name: `Kontribusi Pool ${contributionId}`,
-    // }],
-    // expiry: { // Contoh pengaturan waktu kedaluwarsa token (opsional)
-    //   start_time: new Date().toISOString().slice(0, 19) + " +0700", // Waktu sekarang WIB
-    //   unit: "minutes",
-    //   duration: 30
-    // }
   };
 
   console.log("Mengirim payload ke Midtrans:", JSON.stringify(transactionPayload, null, 2));
@@ -88,7 +76,11 @@ async function createMidtransSnapTransaction(
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { poolId: string } }) {
+// --- FIX DISINI ---
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ poolId: string }> } // 1. Perbaiki tipe 'params' menjadi Promise
+) {
   try {
     await connectToDatabase();
     const userId = getUserIdFromToken(req.headers.get("Authorization"));
@@ -101,7 +93,7 @@ export async function POST(req: NextRequest, { params }: { params: { poolId: str
       return NextResponse.json({ success: false, message: "Pengguna tidak ditemukan." }, { status: 404 });
     }
 
-    const { poolId } = params;
+    const { poolId } = await params; // 2. Gunakan 'await' untuk mendapatkan 'poolId'
     if (!mongoose.Types.ObjectId.isValid(poolId)) {
       return NextResponse.json({ success: false, message: "Format Pool ID tidak valid." }, { status: 400 });
     }
@@ -112,10 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: { poolId: str
       return NextResponse.json({ success: false, message: "Jumlah kontribusi harus berupa angka positif." }, { status: 400 });
     }
     if (!payment_method || !Object.values(PaymentMethod).includes(payment_method as PaymentMethod)) {
-      // Meskipun Midtrans Snap akan menampilkan pilihan, field ini tetap berguna untuk catatan internal.
-      // Anda bisa membuatnya opsional jika pilihan metode pembayaran sepenuhnya diserahkan ke Snap.
       console.warn("Metode pembayaran dari klien:", payment_method, "akan dicatat, tetapi Snap Midtrans akan menampilkan pilihan akhir.");
-      // return NextResponse.json({ success: false, message: "Metode pembayaran tidak valid." }, { status: 400 });
     }
 
     const pool = await MicrofundingPool.findById(poolId);
@@ -128,20 +117,16 @@ export async function POST(req: NextRequest, { params }: { params: { poolId: str
       pool: poolId,
       member: userId,
       amount: amount,
-      contribution_date: new Date(), // Akan diupdate saat pembayaran sukses oleh webhook
-      payment_method: payment_method || PaymentMethod.E_WALLET, // Default jika tidak disediakan, atau buat wajib
+      contribution_date: new Date(),
+      payment_method: payment_method || PaymentMethod.E_WALLET,
       status: ContributionStatus.PENDING,
     });
     await newContribution.save();
 
     // Membuat transaksi di Midtrans Sandbox
-    const midtransTransaction = await createMidtransSnapTransaction(
-      newContribution._id.toString(), // Gunakan ID kontribusi sebagai order_id
-      amount,
-      { email: currentUser.email, name: currentUser.name, phone: currentUser.phone }
-    );
+    const midtransTransaction = await createMidtransSnapTransaction(newContribution._id.toString(), amount, { email: currentUser.email, name: currentUser.name, phone: currentUser.phone });
 
-    // Simpan token Midtrans (atau ID referensi lain) ke record kontribusi kita
+    // Simpan token Midtrans
     newContribution.payment_gateway_reference_id = midtransTransaction.token;
     await newContribution.save();
 
@@ -151,7 +136,6 @@ export async function POST(req: NextRequest, { params }: { params: { poolId: str
         message: "Inisialisasi kontribusi berhasil. Silakan lanjutkan pembayaran.",
         contributionId: newContribution._id.toString(),
         paymentToken: midtransTransaction.token,
-        // redirect_url: midtransTransaction.redirect_url, // Bisa juga dikirim jika diperlukan
       },
       { status: 201 }
     );
@@ -161,6 +145,7 @@ export async function POST(req: NextRequest, { params }: { params: { poolId: str
   }
 }
 
+// Handler GET Anda sudah benar
 export async function GET(request: NextRequest, { params }: { params: Promise<{ poolId: string }> }) {
   try {
     await connectToDatabase();
@@ -175,31 +160,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, message: "Format Pool ID tidak valid." }, { status: 400 });
     }
 
-    // Menggunakan Promise untuk query database
-    return Contribution.find({
+    const contributions = await Contribution.find({
       pool: poolId,
       member: userId,
-    })
-      .sort({ contribution_date: -1 })
-      .then((contributions) => {
-        return NextResponse.json(
-          {
-            success: true,
-            contributions,
-          },
-          { status: 200 }
-        );
-      })
-      .catch((error) => {
-        console.error("Error fetching user contributions:", error);
-        return NextResponse.json(
-          {
-            success: false,
-            message: error.message || "Terjadi kesalahan saat mengambil data kontribusi pengguna.",
-          },
-          { status: 500 }
-        );
-      });
+    }).sort({ contribution_date: -1 });
+
+    return NextResponse.json(
+      {
+        success: true,
+        contributions,
+      },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error("Error fetching user contributions:", error);
     return NextResponse.json(

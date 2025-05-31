@@ -1,3 +1,4 @@
+// src/app/api/microfunding/contributions/[contributionId]/check-status/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db";
 import { getUserIdFromToken } from "@/lib/auth-util";
@@ -77,12 +78,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const midtransStatus = await checkMidtransStatus(contributionId);
       console.log("Midtrans transaction status:", midtransStatus);
 
-      // Tentukan status baru berdasarkan respons Midtrans
-      let newStatus = contribution.status;
+      // --- FIX DISINI ---
+      // Beri tipe eksplisit pada newStatus agar TypeScript tidak mempersempit tipenya
+      let newStatus: ContributionStatus = contribution.status;
       let paymentConfirmedDate;
 
-      if (midtransStatus.transaction_status === "settlement" || 
-          midtransStatus.transaction_status === "capture" && midtransStatus.fraud_status === "accept") {
+      if (midtransStatus.transaction_status === "settlement" || (midtransStatus.transaction_status === "capture" && midtransStatus.fraud_status === "accept")) {
         newStatus = ContributionStatus.SUCCESS;
         paymentConfirmedDate = new Date(midtransStatus.settlement_time || midtransStatus.transaction_time || Date.now());
       } else if (midtransStatus.transaction_status === "pending") {
@@ -93,16 +94,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       // Update status kontribusi jika berubah
       if (newStatus !== contribution.status) {
-        contribution.status = newStatus;
-        
+        contribution.status = newStatus; // Sekarang ini valid
+
         if (paymentConfirmedDate) {
           contribution.contribution_date = paymentConfirmedDate;
         }
-        
+
         await contribution.save();
 
         // Jika status berubah menjadi SUCCESS, update jumlah dana di pool
         if (newStatus === ContributionStatus.SUCCESS) {
+          // Tidak perlu `await MicrofundingPool.findByIdAndUpdate` jika sudah mengambil pool
           const pool = await MicrofundingPool.findById(contribution.pool);
           if (pool) {
             pool.current_amount = (pool.current_amount || 0) + contribution.amount;
@@ -120,12 +122,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       });
     } catch (error: any) {
       console.error("Error checking Midtrans status:", error);
-      return NextResponse.json({
-        success: false,
-        message: `Gagal memeriksa status Midtrans: ${error.message}`,
-        status: contribution.status,
-        contribution,
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Gagal memeriksa status Midtrans: ${error.message}`,
+          status: contribution.status,
+          contribution,
+        },
+        { status: 500 }
+      );
     }
   } catch (error: any) {
     console.error("Error checking contribution status:", error);
