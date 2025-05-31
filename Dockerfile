@@ -2,13 +2,20 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-ENV NODE_ENV=development
-
 COPY package*.json ./
 RUN npm install
 
 COPY . .
 
+RUN echo "MIDTRANS_CLIENT_KEY_SANDBOX=${MIDTRANS_CLIENT_KEY_SANDBOX}" >> .env
+RUN echo "MIDTRANS_SERVER_KEY_SANDBOX=${MIDTRANS_SERVER_KEY_SANDBOX}" >> .env
+RUN echo "NEXT_PUBLIC_MIDTRANS_CLIENT_KEY_SANDBOX=${MIDTRANS_CLIENT_KEY_SANDBOX}" >> .env
+
+RUN npm run build && npm run build:cron
+
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+ENV NODE_ENV="production"
+ENV PORT=3000
+
+CMD ["npm", "start"]
