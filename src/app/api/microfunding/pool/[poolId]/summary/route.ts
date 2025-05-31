@@ -7,16 +7,12 @@ import mongoose from "mongoose";
 import MicrofundingPool from "@/models/microfunding-pool";
 import PoolMember from "@/models/pool-member";
 
-interface Context {
-  params: {
-    poolId: string;
-  };
-}
-
-export async function GET(request: NextRequest, context: Context) {
+// Perubahan 1: Hapus interface 'Context' dan perbarui tanda tangan fungsi
+export async function GET(request: NextRequest, { params }: { params: Promise<{ poolId: string }> }) {
   try {
     await connectToDatabase();
-    const { poolId } = context.params;
+    // Perubahan 2: Gunakan 'await' untuk mendapatkan 'poolId' dari params
+    const { poolId } = await params;
 
     // Otentikasi mungkin tidak wajib untuk summary, tergantung kebutuhan
     const userId = getUserIdFromToken(request.headers.get("Authorization"));

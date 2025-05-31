@@ -8,16 +8,12 @@ import mongoose from "mongoose";
 import PoolMember from "@/models/pool-member";
 import JoinRequest from "@/models/join-request";
 
-interface Context {
-  params: {
-    poolId: string;
-  };
-}
-
-export async function GET(request: NextRequest, context: Context) {
+// Perubahan 1: Hapus interface 'Context' dan perbarui tanda tangan fungsi GET
+export async function GET(request: NextRequest, { params }: { params: Promise<{ poolId: string }> }) {
   try {
     await connectToDatabase();
-    const { poolId } = context.params;
+    // Perubahan 2: Gunakan 'await' untuk mendapatkan 'poolId' dari params
+    const { poolId } = await params;
 
     const adminUserId = getUserIdFromToken(request.headers.get("Authorization"));
     if (!adminUserId) {

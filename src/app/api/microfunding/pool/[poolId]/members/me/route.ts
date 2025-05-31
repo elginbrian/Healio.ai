@@ -6,13 +6,6 @@ import PoolMember from "@/models/pool-member";
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db";
 
-interface Context {
-  params: {
-    poolId: string;
-  };
-}
-
-// Define a new interface for populated PoolMember
 interface IPoolMemberPopulated extends Omit<IPoolMember, "user_id"> {
   user_id: {
     _id: string;
@@ -21,10 +14,12 @@ interface IPoolMemberPopulated extends Omit<IPoolMember, "user_id"> {
   };
 }
 
-export async function GET(request: NextRequest, context: Context) {
+// Perubahan 1: Memperbarui cara parameter diterima dan tipenya
+export async function GET(request: NextRequest, { params }: { params: Promise<{ poolId: string }> }) {
   try {
     await connectToDatabase();
-    const { poolId } = context.params;
+    // Perubahan 2: Menggunakan await untuk mendapatkan poolId dari params
+    const { poolId } = await params;
 
     const userId = getUserIdFromToken(request.headers.get("Authorization"));
     if (!userId) {

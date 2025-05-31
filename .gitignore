@@ -10,6 +10,8 @@
 !.yarn/releases
 !.yarn/versions
 
+remover.ps1
+
 # testing
 /coverage
 
