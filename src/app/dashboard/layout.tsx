@@ -7,6 +7,7 @@ import api from "@/lib/api";
 import { IUser } from "@/types";
 import toast from "react-hot-toast";
 import ProfileCompletionModal from "@/components/dashboard/complete-profile-modal";
+import ProtectedRoute from "@/components/auth/protected-route";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -37,7 +38,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   const isInitialProfileComplete = (currentUser: IUser | null): boolean => {
     if (!currentUser) return false;
-    return !!(currentUser.name && currentUser.hasOwnProperty("age") && currentUser.age !== null && currentUser.gender);
+    return !!(currentUser.name && currentUser.hasOwnProperty("age") && currentUser.age !== null && currentUser.age !== 0 && currentUser.gender);
   };
 
   const isKtpVerified = (currentUser: IUser | null): boolean => {
@@ -65,7 +66,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     setCurrentProfileStep((prev) => Math.max(1, prev - 1));
   };
 
-  const handleProfileFormSubmit = async (submission: { step: number; formData: any }) => {
+  const handleProfileFormSubmit = async (submission: { step: number; formData: any /* isFinalStep: boolean; */ }) => {
     if (!user) {
       toast.error("Sesi tidak valid. Silakan login kembali.");
       return;
@@ -78,9 +79,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       setCurrentProfileStep((prev) => prev + 1);
       setIsProfileModalOpen(true);
     } else {
-      const { ktpImage, dob, ...jsonDataToSubmit } = currentData;
+      const { ktpImage, dob, fullName, pekerjaan, pendapatanBulanan, alamatLengkap, riwayatKesehatan, ...restOfData } = currentData;
 
-      let finalJsonData: Partial<IUser> = { ...jsonDataToSubmit };
+      let finalJsonData: Partial<IUser> = { ...restOfData };
+
+      if (fullName) finalJsonData.name = fullName;
+      if (pekerjaan) finalJsonData.employment_status = pekerjaan;
+      if (pendapatanBulanan) finalJsonData.income_level = parseInt(pendapatanBulanan, 10) || 0;
+      if (alamatLengkap) finalJsonData.address = alamatLengkap;
+      if (riwayatKesehatan) finalJsonData.chronic_conditions = riwayatKesehatan;
 
       if (dob && (!finalJsonData.age || finalJsonData.age === 0)) {
         const age = calculateAge(dob as string);
@@ -89,32 +96,30 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         }
       }
 
-      if (currentData.pekerjaan) {
-        finalJsonData.employment_status = currentData.pekerjaan;
-      }
+      delete (finalJsonData as any).ktpImage;
+      delete (finalJsonData as any).dob;
+      delete (finalJsonData as any).pekerjaan;
+      delete (finalJsonData as any).pendapatanBulanan;
+      delete (finalJsonData as any).alamatLengkap;
+      delete (finalJsonData as any).riwayatKesehatan;
 
-      if (currentData.pendapatanBulanan) {
-        finalJsonData.income_level = parseInt(currentData.pendapatanBulanan, 10) || 0;
+      if (finalJsonData.education_level === undefined || finalJsonData.education_level === "") {
+        finalJsonData.education_level = "Belum diisi";
       }
-
-      if (currentData.alamatLengkap) {
-        finalJsonData.address = currentData.alamatLengkap;
+      if (finalJsonData.chronic_conditions === undefined || finalJsonData.chronic_conditions === "") {
+        finalJsonData.chronic_conditions = "Tidak ada";
       }
-
-      if (currentData.riwayatKesehatan) {
-        finalJsonData.chronic_conditions = currentData.riwayatKesehatan;
-      }
-
-      if (!finalJsonData.education_level) {
-        finalJsonData.education_level = "Tidak Diisi";
-      }
-
-      if (!finalJsonData.max_budget) {
+      if (finalJsonData.max_budget === undefined) {
         finalJsonData.max_budget = 0;
       }
-
-      if (!finalJsonData.max_distance_km) {
+      if (finalJsonData.max_distance_km === undefined) {
         finalJsonData.max_distance_km = 10;
+      }
+      if (finalJsonData.employment_status === undefined || finalJsonData.employment_status === "") {
+        finalJsonData.employment_status = "Belum diisi";
+      }
+      if (finalJsonData.income_level === undefined) {
+        finalJsonData.income_level = 0;
       }
 
       try {
@@ -122,6 +127,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         toast.success(response.data.message || "Profil berhasil diperbarui!");
 
         if (ktpImage instanceof File) {
+          console.log("TODO: Implement KTP image upload", ktpImage.name);
         }
 
         if (token) {
@@ -151,58 +157,77 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     return age >= 0 ? age : undefined;
   };
 
-  return (
-    <div className="h-screen w-full flex overflow-hidden">
-      <div className="h-full flex-shrink-0">
-        <Sidebar />
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-100">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--color-p-300)]"></div>
+        <p className="ml-4 text-lg text-gray-700">Memuat sesi Anda...</p>
       </div>
-      <main className="flex-1 overflow-hidden">
-        <div className="h-screen overflow-y-auto">{children}</div>
-      </main>
+    );
+  }
 
-      {!loading && user && isProfileModalOpen && (
-        <ProfileCompletionModal
-          isOpen={isProfileModalOpen}
-          onClose={handleCloseProfileModal}
-          onSubmitForm={handleProfileFormSubmit}
-          onGoToPreviousStep={handleGoToPreviousStep}
-          currentStep={currentProfileStep}
-          totalSteps={totalProfileSteps}
-          initialEmail={user?.email || ""}
-          initialNik={user?.ktp_number || ""}
-          initialStep1Data={{
-            fullName: accumulatedProfileData.name || user.name || "",
-            email: accumulatedProfileData.email || user.email || "",
-            phone: accumulatedProfileData.phone || user.phone || "",
-            dob: accumulatedProfileData.dob || "",
-            gender: accumulatedProfileData.gender || user.gender || "",
-          }}
-          initialStep2Data={{
-            nik: accumulatedProfileData.ktp_number || user.ktp_number || "",
-            ktpImage: (accumulatedProfileData as any).ktpImage || null,
-          }}
-          initialStep3Data={{
-            pekerjaan: accumulatedProfileData.pekerjaan || user.employment_status || "",
-            perusahaan: accumulatedProfileData.perusahaan || (user as any).perusahaan || "",
-            lamaBekerjaJumlah: accumulatedProfileData.lamaBekerjaJumlah || (user as any).lamaBekerjaJumlah || "",
-            lamaBekerjaSatuan: accumulatedProfileData.lamaBekerjaSatuan || (user as any).lamaBekerjaSatuan || "BULAN",
-            pendapatanBulanan: accumulatedProfileData.pendapatanBulanan || (user.income_level ? String(user.income_level) : "") || "",
-            sumberPendapatanLain: accumulatedProfileData.sumberPendapatanLain || (user as any).sumberPendapatanLain || "",
-          }}
-          initialStep4Data={{
-            alamatLengkap: accumulatedProfileData.alamatLengkap || user.address || "",
-            kotaKabupaten: accumulatedProfileData.kotaKabupaten || (user as any).kotaKabupaten || "",
-            kodePos: accumulatedProfileData.kodePos || (user as any).kodePos || "",
-            provinsi: accumulatedProfileData.provinsi || (user as any).provinsi || "",
-            riwayatKesehatan: accumulatedProfileData.riwayatKesehatan || user.chronic_conditions || "",
-            persetujuanAnalisisData:
-              accumulatedProfileData.persetujuanAnalisisData !== undefined ? accumulatedProfileData.persetujuanAnalisisData : (user as any).persetujuanAnalisisData !== undefined ? (user as any).persetujuanAnalisisData : false,
-          }}
-        />
-      )}
-    </div>
+  return (
+    <ProtectedRoute>
+      {" "}
+      <div className="h-screen w-full flex overflow-hidden">
+        <div className="h-full flex-shrink-0">
+          <Sidebar />
+        </div>
+        <main className="flex-1 overflow-hidden">
+          <div className="h-screen overflow-y-auto">{children}</div>
+        </main>
+
+        {!loading && user && isProfileModalOpen && (
+          <ProfileCompletionModal
+            isOpen={isProfileModalOpen}
+            onClose={handleCloseProfileModal}
+            onSubmitForm={handleProfileFormSubmit}
+            onGoToPreviousStep={handleGoToPreviousStep}
+            currentStep={currentProfileStep}
+            totalSteps={totalProfileSteps}
+            initialEmail={user?.email || ""}
+            initialNik={user?.ktp_number || ""}
+            initialStep1Data={{
+              fullName: accumulatedProfileData.name || user.name || "",
+              email: accumulatedProfileData.email || user.email || "",
+              phone: accumulatedProfileData.phone || user.phone || "",
+              dob: (accumulatedProfileData as any).dob || "",
+              gender: accumulatedProfileData.gender || user.gender || "",
+            }}
+            initialStep2Data={{
+              nik: accumulatedProfileData.ktp_number || user.ktp_number || "",
+              ktpImage: (accumulatedProfileData as any).ktpImage || null,
+            }}
+            initialStep3Data={{
+              pekerjaan: (accumulatedProfileData as any).pekerjaan || user.employment_status || "",
+              perusahaan: (accumulatedProfileData as any).perusahaan || "",
+              lamaBekerjaJumlah: (accumulatedProfileData as any).lamaBekerjaJumlah || "",
+              lamaBekerjaSatuan: (accumulatedProfileData as any).lamaBekerjaSatuan || "BULAN",
+              pendapatanBulanan: (accumulatedProfileData as any).pendapatanBulanan || (user.income_level ? String(user.income_level) : ""),
+              sumberPendapatanLain: (accumulatedProfileData as any).sumberPendapatanLain || "",
+            }}
+            initialStep4Data={{
+              alamatLengkap: (accumulatedProfileData as any).alamatLengkap || user.address || "",
+              kotaKabupaten: (accumulatedProfileData as any).kotaKabupaten || "",
+              kodePos: (accumulatedProfileData as any).kodePos || "",
+              provinsi: (accumulatedProfileData as any).provinsi || "",
+              riwayatKesehatan: (accumulatedProfileData as any).riwayatKesehatan || user.chronic_conditions || "",
+              persetujuanAnalisisData:
+                (accumulatedProfileData as any).persetujuanAnalisisData !== undefined
+                  ? (accumulatedProfileData as any).persetujuanAnalisisData
+                  : (user as any).persetujuanAnalisisData !== undefined
+                  ? (user as any).persetujuanAnalisisData
+                  : false,
+              bpjs_status: (accumulatedProfileData as any).bpjs_status !== undefined ? (accumulatedProfileData as any).bpjs_status : user.bpjs_status || false,
+              education_level: (accumulatedProfileData as any).education_level || user.education_level || "",
+              max_budget: (accumulatedProfileData as any).max_budget || (user.max_budget ? String(user.max_budget) : "0"),
+              max_distance_km: (accumulatedProfileData as any).max_distance_km || (user.max_distance_km ? String(user.max_distance_km) : "10"),
+            }}
+          />
+        )}
+      </div>
+    </ProtectedRoute>
   );
 };
 
 export default DashboardLayout;
-

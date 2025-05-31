@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { IUserCredentials, login } from "@/services/auth-service";
 import { useAuth } from "@/lib/auth";
 import toast from "react-hot-toast";
+import PublicRoute from "@/components/auth/public-route";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
@@ -72,13 +73,12 @@ function LoginForm() {
 
         <div className="flex flex-col h-full w-full items-center justify-center p-8 lg:w-1/2 overflow-hidden">
           <div className="w-full max-w-md max-h-full">
+            {" "}
             <div className="mb-8 flex justify-center">
               <img src="/img/logo.svg" alt="Healio.ai Logo" className="h-24 w-24" />
             </div>
             <h1 className="mb-8 text-center text-4xl font-bold text-[var(--color-p-300)]">Selamat Datang di Healio.ai</h1>
-
             {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-center">{error}</div>}
-
             <form onSubmit={handleSubmit}>
               <div className="mb-5">
                 <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-500">
@@ -156,9 +156,17 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <LoginForm />
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen">
+          <p>Memuat Halaman Login...</p>
+        </div>
+      }
+    >
+      <PublicRoute>
+        {" "}
+        <LoginForm />
+      </PublicRoute>
     </Suspense>
   );
 }
-

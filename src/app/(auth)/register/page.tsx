@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -8,8 +8,9 @@ import { FcGoogle } from "react-icons/fc";
 import { useRouter } from "next/navigation";
 import { IUserRegistration, register } from "@/services/auth-service";
 import toast from "react-hot-toast";
+import PublicRoute from "@/components/auth/public-route";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,6 +26,13 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (password.length < 6) {
+      setError("Password minimal harus 6 karakter.");
+      toast.error("Password minimal harus 6 karakter.");
+      return;
+    }
+
     setIsLoading(true);
 
     const registerPromise = new Promise<void>(async (resolve, reject) => {
@@ -43,7 +51,7 @@ export default function RegisterPage() {
     toast.promise(registerPromise, {
       loading: "Mendaftarkan akun...",
       success: "Registrasi berhasil! Silakan login dengan akun baru Anda.",
-      error: (err) => `${err}`,
+      error: (err) => `${err || "Gagal melakukan registrasi."}`,
     });
 
     registerPromise
@@ -60,15 +68,15 @@ export default function RegisterPage() {
           <Image src="/img/login_image.png" alt="Doctor holding a stethoscope" width={800} height={1200} className="h-full w-full object-cover" />
         </div>
 
-        <div className="flex flex-col h-full w-full items-center justify-center p-8 lg:w-1/2 overflow-hidden">
-          <div className="w-full max-w-md max-h-full">
+        <div className="flex flex-col h-full w-full items-center justify-center p-8 lg:w-1/2 overflow-y-auto">
+          {" "}
+          <div className="w-full max-w-md">
+            {" "}
             <div className="mb-8 flex justify-center">
               <img src="/img/logo.svg" alt="Healio.ai Logo" className="h-24 w-24" />
             </div>
             <h1 className="mb-8 text-center text-4xl font-bold text-[var(--color-p-300)]">Buat akun baru</h1>
-
             {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-center">{error}</div>}
-
             <form onSubmit={handleSubmit}>
               <div className="mb-5">
                 <label htmlFor="name" className="mb-2 block text-sm font-medium text-gray-500">
@@ -156,5 +164,22 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen">
+          <p>Memuat Halaman Registrasi...</p>
+        </div>
+      }
+    >
+      <PublicRoute>
+        {" "}
+        <RegisterForm />
+      </PublicRoute>
+    </Suspense>
   );
 }

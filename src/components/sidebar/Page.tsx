@@ -3,13 +3,15 @@
 import React, { useEffect, useState } from "react";
 import SidebarItem from "./sidebar_item/page";
 import { usePathname, useRouter } from "next/navigation";
-import { FaUserCircle, FaChevronRight, FaChevronLeft, FaUser, FaMoneyBill } from "react-icons/fa";
+import { FaUserCircle, FaChevronRight, FaChevronLeft, FaUser, FaMoneyBill, FaSignOutAlt } from "react-icons/fa";
+import { useAuth } from "@/lib/auth";
 
 const Sidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const [activeMenu, setActiveMenu] = useState("");
   const [expanded, setExpanded] = useState(false);
+  const { logout } = useAuth();
 
   useEffect(() => {
     if (pathname.includes("/dashboard/facilities")) {
@@ -34,6 +36,11 @@ const Sidebar = () => {
     setExpanded(!expanded);
   };
 
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
+
   return (
     <div className={`h-full flex flex-col shadow-md justify-between transition-all duration-300 relative ${expanded ? "w-80" : "w-[100px]"}`}>
       <div className="flex flex-col">
@@ -52,8 +59,9 @@ const Sidebar = () => {
           <SidebarItem name="komunitas" label="Komunitas" active={activeMenu === "community"} onClick={() => handleNavigation("community")} icon={FaUser} expanded={expanded} />
         </div>
       </div>
-      <div className="px-6 mb-6">
+      <div className="px-6 mb-4 flex flex-col">
         <SidebarItem name="profile" label="Profil" active={activeMenu === "profile"} onClick={() => handleNavigation("profile")} icon={FaUserCircle} expanded={expanded} />
+        <SidebarItem name="logout" label="Keluar" active={false} onClick={handleLogout} icon={FaSignOutAlt} expanded={expanded} />
       </div>
 
       <div className="absolute top-[60%] right-0 transform -translate-y-1/2 flex items-center">
