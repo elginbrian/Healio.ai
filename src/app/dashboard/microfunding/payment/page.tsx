@@ -37,7 +37,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({ poolId, userProfileImage }) => 
   );
 };
 
-// Component for payment form
 type PaymentFormProps = {
   poolDetails: IMicrofundingPool;
   amountToPay: number;
@@ -115,7 +114,6 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ poolDetails, amountToPay, set
   );
 };
 
-// Component for payment summary
 type PaymentSummaryProps = {
   poolDetails: IMicrofundingPool;
   amountToPay: number;
@@ -151,7 +149,6 @@ const PaymentSummary: React.FC<PaymentSummaryProps> = ({ poolDetails, amountToPa
   );
 };
 
-// Component for payment history
 type PaymentHistoryProps = {
   paymentHistory: IContribution[];
   isLoadingHistory: boolean;
@@ -214,14 +211,12 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ paymentHistory, isLoadi
   );
 };
 
-// Component for loading state
 const LoadingState = () => (
   <div className="flex justify-center items-center min-h-screen">
     <Loader2 className="h-12 w-12 animate-spin text-[var(--color-p-300)]" />
   </div>
 );
 
-// Component for error state
 type ErrorStateProps = {
   onBack: () => void;
 };
@@ -431,3 +426,4 @@ const PaymentPage = () => {
 };
 
 export default PaymentPage;
+

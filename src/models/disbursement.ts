@@ -1,7 +1,6 @@
 import mongoose, { Schema, Model, models, Document } from "mongoose";
 import { IDisbursement, IVote, DisbursementStatus, VoteOption } from "@/types";
 
-// Define the IVote subdocument schema
 const VoteSchema = new Schema<IVote>(
   {
     user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
@@ -35,14 +34,14 @@ const DisbursementSchema = new Schema<IDisbursementDocument>(
     voters: [VoteSchema],
   },
   {
-    timestamps: true, // This will add createdAt and updatedAt
+    timestamps: true,
   }
 );
 
-// Index to ensure a user can only vote once per disbursement
 DisbursementSchema.index({ _id: 1, "voters.user_id": 1 }, { unique: true, partialFilterExpression: { "voters.user_id": { $exists: true } } });
-DisbursementSchema.index({ pool_id: 1, status: 1, voting_deadline: 1 }); // For cron jobs
+DisbursementSchema.index({ pool_id: 1, status: 1, voting_deadline: 1 });
 
 const Disbursement: Model<IDisbursementDocument> = models.Disbursement || mongoose.model<IDisbursementDocument>("Disbursement", DisbursementSchema);
 
 export default Disbursement;
+

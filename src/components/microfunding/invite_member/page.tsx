@@ -62,18 +62,16 @@ const UndangAnggotaTab = ({ poolId, poolCode = "#KODEPOOL", isCurrentUserAdmin =
   useEffect(() => {
     fetchPendingRequests();
 
-    // Set up periodic refresh (every 30 seconds)
     if (poolId && isCurrentUserAdmin) {
       const intervalId = setInterval(fetchPendingRequests, 30000);
       return () => clearInterval(intervalId);
     }
   }, [fetchPendingRequests, poolId, isCurrentUserAdmin]);
 
-  // ... existing code for handleCopy and handleUpdateRequestStatus ...
 
   return (
     <div className="p-1 md:p-6 bg-white">
-      {/* ... existing code for invitation section ... */}
+
 
       {isCurrentUserAdmin && (
         <>
@@ -100,7 +98,7 @@ const UndangAnggotaTab = ({ poolId, poolCode = "#KODEPOOL", isCurrentUserAdmin =
           ) : pendingRequests.length === 0 ? (
             <p className="text-gray-500 text-center py-6">Tidak ada permintaan bergabung yang tertunda.</p>
           ) : (
-            <div className="bg-white rounded-lg overflow-x-auto">{/* ... existing table code ... */}</div>
+            <div className="bg-white rounded-lg overflow-x-auto"></div>
           )}
         </>
       )}
@@ -109,3 +107,4 @@ const UndangAnggotaTab = ({ poolId, poolCode = "#KODEPOOL", isCurrentUserAdmin =
 };
 
 export default UndangAnggotaTab;
+

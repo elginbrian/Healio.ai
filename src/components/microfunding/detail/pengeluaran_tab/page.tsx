@@ -4,28 +4,24 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ChevronUp, ChevronDown, Loader2, Hospital, Pill, Stethoscope, CheckCircle } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
-import { IDisbursement, DisbursementStatus } from "@/types"; // Use IDisbursement
+import { IDisbursement, DisbursementStatus } from "@/types";
 
 interface PengeluaranTabProps {
   poolId?: string;
 }
 
 const PengeluaranTab = ({ poolId }: PengeluaranTabProps) => {
-  const [expenses, setExpenses] = useState<IDisbursement[]>([]); // Changed to IDisbursement
+  const [expenses, setExpenses] = useState<IDisbursement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const fetchActualExpenses = useCallback(async () => {
-    // Renamed function
     if (!poolId) return;
 
     setIsLoading(true);
     try {
-      // Fetch disbursements that are considered actual expenses
       const response = await api.get(`/api/microfunding/pool/${poolId}/disbursements?status=${DisbursementStatus.DISBURSED}`);
-      // Or you might want to include APPROVED ones too: ?status=DISBURSED&status=APPROVED
       if (response.data.success) {
-        // Sort by disbursement_date or resolved_at if disbursement_date is not set yet
         const sortedData = response.data.disbursements.sort((a: IDisbursement, b: IDisbursement) => {
           const dateA = new Date(a.disbursement_date || a.resolved_at || a.request_date).getTime();
           const dateB = new Date(b.disbursement_date || b.resolved_at || b.request_date).getTime();
@@ -41,7 +37,7 @@ const PengeluaranTab = ({ poolId }: PengeluaranTabProps) => {
     } finally {
       setIsLoading(false);
     }
-  }, [poolId, sortOrder]); // Add sortOrder dependency
+  }, [poolId, sortOrder]);
 
   useEffect(() => {
     fetchActualExpenses();
@@ -50,7 +46,6 @@ const PengeluaranTab = ({ poolId }: PengeluaranTabProps) => {
   const toggleSortOrder = () => {
     setSortOrder((prevOrder) => {
       const newOrder = prevOrder === "asc" ? "desc" : "asc";
-      // Re-sort existing data, or let fetchActualExpenses handle it if it depends on sortOrder
       setExpenses((prevExpenses) =>
         [...prevExpenses].sort((a, b) => {
           const dateA = new Date(a.disbursement_date || a.resolved_at || a.request_date).getTime();
@@ -62,13 +57,12 @@ const PengeluaranTab = ({ poolId }: PengeluaranTabProps) => {
     });
   };
 
-  // This function might need adjustment based on how you categorize 'purpose' or if you add a 'category' field to IDisbursement
   const getExpenseIcon = (purpose: string) => {
     const lowerPurpose = purpose.toLowerCase();
     if (lowerPurpose.includes("rawat inap") || lowerPurpose.includes("hospital")) return Hospital;
     if (lowerPurpose.includes("obat") || lowerPurpose.includes("medicine") || lowerPurpose.includes("farmasi")) return Pill;
     if (lowerPurpose.includes("konsultasi") || lowerPurpose.includes("doctor") || lowerPurpose.includes("spesialis")) return Stethoscope;
-    return CheckCircle; // Default icon for a disbursed item
+    return CheckCircle;
   };
 
   const formatDate = (date: Date | string | undefined) => {
@@ -127,3 +121,4 @@ const PengeluaranTab = ({ poolId }: PengeluaranTabProps) => {
 };
 
 export default PengeluaranTab;
+

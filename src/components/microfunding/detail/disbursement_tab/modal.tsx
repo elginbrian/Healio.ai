@@ -5,7 +5,7 @@ import { X, Loader2, DollarSign, FileText, UserCircle } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { useAuth } from "@/lib/auth";
-import { IPoolMember, IUser } from "@/types"; // Assuming IUser might be needed if selecting recipients
+import { IPoolMember, IUser } from "@/types";
 
 interface RequestDisbursementModalProps {
   poolId: string;
@@ -20,28 +20,10 @@ const RequestDisbursementModal: React.FC<RequestDisbursementModalProps> = ({ poo
   const [amount, setAmount] = useState<string>("");
   const [purpose, setPurpose] = useState<string>("");
   const [proofUrl, setProofUrl] = useState<string>("");
-  // const [recipientUserId, setRecipientUserId] = useState<string>(user?._id || ''); // Default to self, or allow selection if admin
-  // const [poolMembers, setPoolMembers] = useState<IUser[]>([]); // For admin to select recipient
 
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // // Fetch pool members if admin needs to select recipient (Optional advanced feature)
-  // useEffect(() => {
-  //   const fetchMembersForSelection = async () => {
-  //     if (user?.isAdminForThisPool) { // You'd need a way to determine this
-  //       try {
-  //         const response = await api.get(`/api/microfunding/pool/${poolId}/members`);
-  //         if (response.data.success) {
-  //           setPoolMembers(response.data.members.map((m: any) => m.user_id));
-  //         }
-  //       } catch (error) {
-  //         console.error("Failed to fetch pool members for recipient selection", error);
-  //       }
-  //     }
-  //   };
-  //   fetchMembersForSelection();
-  // }, [poolId, user?.isAdminForThisPool]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +50,7 @@ const RequestDisbursementModal: React.FC<RequestDisbursementModalProps> = ({ poo
     setIsLoading(true);
     try {
       const payload = {
-        recipient_user_id: user._id, // For now, user requests for themselves.
+        recipient_user_id: user._id,
         amount: numericAmount,
         purpose: purpose.trim(),
         proof_url: proofUrl.trim() || undefined,
@@ -110,18 +92,6 @@ const RequestDisbursementModal: React.FC<RequestDisbursementModalProps> = ({ poo
             Dana tersedia di pool: <span className="font-medium">Rp {maxDisbursableAmount.toLocaleString("id-ID")}</span>.
           </p>
 
-          {/* Optional: Recipient Selection for Admins
-          {user?.isAdminForThisPool && (
-            <div>
-              <label htmlFor="recipient" className="block text-sm font-medium text-gray-700 mb-1">Penerima Dana</label>
-              <select id="recipient" value={recipientUserId} onChange={(e) => setRecipientUserId(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-[var(--color-p-300)] focus:border-[var(--color-p-300)] outline-none">
-                <option value="">Pilih Penerima</option>
-                {poolMembers.map(member => (
-                  <option key={member._id} value={member._id}>{member.name} ({member.email})</option>
-                ))}
-              </select>
-            </div>
-          )} */}
 
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
@@ -207,3 +177,4 @@ const RequestDisbursementModal: React.FC<RequestDisbursementModalProps> = ({ poo
 };
 
 export default RequestDisbursementModal;
+
