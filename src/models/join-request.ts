@@ -1,6 +1,5 @@
-import mongoose, { Schema, models, Model } from "mongoose";
-import { IJoinRequest } from "@/types";
-import { JoinRequestStatus } from "@/types/enums";
+import mongoose, { Schema, Document, models, Model } from "mongoose";
+import { IJoinRequest, JoinRequestStatus } from "@/types";
 
 const joinRequestSchema = new Schema<IJoinRequest>(
   {
@@ -8,17 +7,20 @@ const joinRequestSchema = new Schema<IJoinRequest>(
       type: Schema.Types.ObjectId,
       ref: "MicrofundingPool",
       required: [true, "Pool ID wajib diisi"],
+      index: true,
     },
     user_id: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "User ID pemohon wajib diisi"],
+      required: [true, "User ID wajib diisi"],
+      index: true,
     },
     status: {
       type: String,
       enum: Object.values(JoinRequestStatus),
       default: JoinRequestStatus.PENDING,
       required: true,
+      index: true,
     },
     requested_at: {
       type: String,
@@ -38,8 +40,11 @@ const joinRequestSchema = new Schema<IJoinRequest>(
   }
 );
 
-joinRequestSchema.index({ pool_id: 1, user_id: 1, status: 1 });
+joinRequestSchema.index({ pool_id: 1, user_id: 1, status: 1 }, { unique: true, partialFilterExpression: { status: JoinRequestStatus.PENDING } });
 
-const JoinRequest: Model<IJoinRequest> = models.JoinRequest || mongoose.model<IJoinRequest>("JoinRequest", joinRequestSchema);
+export interface JoinRequestDocument extends Document, Omit<IJoinRequest, "_id"> {}
+
+const JoinRequest = models.JoinRequest || mongoose.model<IJoinRequest>("JoinRequest", joinRequestSchema);
 
 export default JoinRequest;
+

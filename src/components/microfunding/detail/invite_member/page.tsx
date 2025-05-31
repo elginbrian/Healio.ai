@@ -30,7 +30,7 @@ const UndangAnggotaTab = ({ poolId, poolCode = "#KODEPOOL", isCurrentUserAdmin =
     }
     setIsLoadingRequests(true);
     try {
-      const response = await api.get(`/api/microfunding/pools/${poolId}/join-requests?status=PENDING`);
+      const response = await api.get(`/api/microfunding/pool/${poolId}/join-requests?status=PENDING`);
       if (response.data.success) {
         setPendingRequests(response.data.requests || []);
       } else {
@@ -75,11 +75,9 @@ const UndangAnggotaTab = ({ poolId, poolCode = "#KODEPOOL", isCurrentUserAdmin =
     }
   };
 
-
   return (
     <div className="p-1 md:p-6 bg-white">
       {" "}
-
       <h3 className="text-xl font-bold text-gray-900 mb-2">Undang Anggota Baru</h3>
       <p className="text-gray-600 mb-6">Bagikan kode undangan untuk mengundang anggota baru ke pool Anda:</p>
       <div className="flex flex-col sm:flex-row w-full justify-between gap-4 sm:gap-16 mb-8">
@@ -97,7 +95,6 @@ const UndangAnggotaTab = ({ poolId, poolCode = "#KODEPOOL", isCurrentUserAdmin =
 
         <div className="mb-0 sm:mb-8">
           {" "}
-
           <h4 className="text-base font-semibold text-gray-700 mb-2 sm:mb-4">Bagikan melalui:</h4>
           <div className="flex flex-wrap gap-2 sm:gap-3">
             {["WhatsApp", "Email", "Salin Tautan"].map((platform) => (
@@ -125,7 +122,6 @@ const UndangAnggotaTab = ({ poolId, poolCode = "#KODEPOOL", isCurrentUserAdmin =
           ) : (
             <div className="bg-white rounded-lg overflow-x-auto">
               {" "}
-
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -141,7 +137,6 @@ const UndangAnggotaTab = ({ poolId, poolCode = "#KODEPOOL", isCurrentUserAdmin =
                     <tr key={request._id}>
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-
                           <div className="flex-shrink-0 h-10 w-10 mr-3">
                             <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
                               <span className="text-white text-sm font-medium">{request.user_id?.name?.charAt(0).toUpperCase() || "U"}</span>
@@ -160,7 +155,6 @@ const UndangAnggotaTab = ({ poolId, poolCode = "#KODEPOOL", isCurrentUserAdmin =
                                             `}
                         >
                           {" "}
-
                           {request.status}
                         </span>
                       </td>
@@ -196,5 +190,3 @@ const UndangAnggotaTab = ({ poolId, poolCode = "#KODEPOOL", isCurrentUserAdmin =
 };
 
 export default UndangAnggotaTab;
-
-

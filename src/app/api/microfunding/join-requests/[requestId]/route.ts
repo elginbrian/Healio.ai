@@ -1,104 +1,121 @@
 // src/app/api/microfunding/join-requests/[requestId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectToDatabase from "@/lib/db";
 import { getUserIdFromToken } from "@/lib/auth-util";
 import { PoolMemberRole, JoinRequestStatus } from "@/types/enums";
-import mongoose from "mongoose";
 import JoinRequest from "@/models/join-request";
 import MicrofundingPool from "@/models/microfunding-pool";
 import PoolMember from "@/models/pool-member";
 
-interface Context {
+// Definisikan tipe untuk body request
+interface PatchRequestBody {
+  status: JoinRequestStatus;
+  reason?: string;
+}
+
+// ===================================================================
+// PERBAIKAN UTAMA DI SINI: Definisikan tipe untuk konteks rute
+// ===================================================================
+interface RouteContext {
   params: {
     requestId: string;
   };
 }
 
-export async function PATCH(request: NextRequest, context: Context) {
+// Gunakan 'async' dan terapkan interface RouteContext yang baru
+export async function PATCH(request: NextRequest, context: RouteContext) {
+  // Ambil requestId dari context
+  const { requestId } = context.params;
+
+  // ... (Sisa kode Anda tetap sama persis)
+
+  if (!mongoose.Types.ObjectId.isValid(requestId)) {
+    return NextResponse.json({ success: false, message: "Format Request ID tidak valid." }, { status: 400 });
+  }
+
+  const adminUserId = getUserIdFromToken(request.headers.get("Authorization"));
+  if (!adminUserId) {
+    return NextResponse.json({ success: false, message: "Akses ditolak: Tidak terautentikasi." }, { status: 401 });
+  }
+
+  let body: PatchRequestBody;
   try {
-    await connectToDatabase();
-    const { requestId } = context.params;
+    body = await request.json();
+  } catch (e) {
+    return NextResponse.json({ success: false, message: "Request body tidak valid (JSON)." }, { status: 400 });
+  }
 
-    const adminUserId = getUserIdFromToken(request.headers.get("Authorization"));
-    if (!adminUserId) {
-      return NextResponse.json({ success: false, message: "Akses ditolak: Tidak terautentikasi." }, { status: 401 });
-    }
+  const { status: newStatus } = body;
+  if (!newStatus || !Object.values(JoinRequestStatus).includes(newStatus)) {
+    return NextResponse.json({ success: false, message: "Status baru tidak valid." }, { status: 400 });
+  }
 
-    if (!mongoose.Types.ObjectId.isValid(requestId)) {
-      return NextResponse.json({ success: false, message: "Format Request ID tidak valid." }, { status: 400 });
-    }
+  const session = await mongoose.startSession();
+  try {
+    let updatedRequest;
+    await session.withTransaction(async () => {
+      const joinRequestDoc = await JoinRequest.findById(requestId).session(session);
+      if (!joinRequestDoc) throw new Error("NOT_FOUND");
+      if (joinRequestDoc.status !== JoinRequestStatus.PENDING) throw new Error("ALREADY_PROCESSED");
 
-    const body = await request.json();
-    const { status: newStatus } = body; // status baru: 'APPROVED' atau 'REJECTED'
+      const pool = await MicrofundingPool.findById(joinRequestDoc.pool_id).session(session);
+      if (!pool) throw new Error("POOL_NOT_FOUND");
 
-    if (!newStatus || !Object.values(JoinRequestStatus).includes(newStatus as JoinRequestStatus)) {
-      return NextResponse.json({ success: false, message: "Status baru tidak valid." }, { status: 400 });
-    }
+      const adminMembership = await PoolMember.findOne({
+        pool_id: pool._id,
+        user_id: adminUserId,
+        role: PoolMemberRole.ADMIN,
+      }).session(session);
+      if (!adminMembership) throw new Error("FORBIDDEN");
 
-    const joinRequestDoc = await JoinRequest.findById(requestId);
-    if (!joinRequestDoc) {
-      return NextResponse.json({ success: false, message: "Permintaan bergabung tidak ditemukan." }, { status: 404 });
-    }
+      if (newStatus === JoinRequestStatus.APPROVED) {
+        const memberCount = await PoolMember.countDocuments({ pool_id: pool._id }).session(session);
+        if (memberCount >= pool.max_members) throw new Error("POOL_FULL");
 
-    if (joinRequestDoc.status !== JoinRequestStatus.PENDING) {
-      return NextResponse.json({ success: false, message: "Permintaan ini sudah diproses sebelumnya." }, { status: 400 });
-    }
+        const existingMember = await PoolMember.findOne({
+          pool_id: pool._id,
+          user_id: joinRequestDoc.user_id,
+        }).session(session);
+        if (existingMember) throw new Error("USER_ALREADY_MEMBER");
 
-    const pool = await MicrofundingPool.findById(joinRequestDoc.pool_id);
-    if (!pool) {
-      return NextResponse.json({ success: false, message: "Pool terkait tidak ditemukan." }, { status: 404 });
-    }
-
-    // Verifikasi apakah pengguna adalah admin dari pool ini
-    const adminMembership = await PoolMember.findOne({ pool_id: pool._id, user_id: adminUserId, role: PoolMemberRole.ADMIN });
-    if (!adminMembership) {
-      return NextResponse.json({ success: false, message: "Akses ditolak: Anda bukan admin pool ini." }, { status: 403 });
-    }
-
-    if (newStatus === JoinRequestStatus.APPROVED) {
-      // Cek apakah pool sudah penuh
-      const memberCount = await PoolMember.countDocuments({ pool_id: pool._id });
-      if (memberCount >= pool.max_members) {
-        // Otomatis tolak jika penuh, atau biarkan admin memutuskan (tapi ini lebih aman)
-        joinRequestDoc.status = JoinRequestStatus.REJECTED;
-        joinRequestDoc.resolved_at = new Date().toISOString();
-        joinRequestDoc.resolver_user_id = adminUserId as any;
-        await joinRequestDoc.save();
-        return NextResponse.json({ success: false, message: "Gagal menyetujui: Pool sudah penuh." }, { status: 400 });
+        const newMember = new PoolMember({
+          pool_id: pool._id,
+          user_id: joinRequestDoc.user_id,
+          role: PoolMemberRole.MEMBER,
+          joined_date: new Date(),
+        });
+        await newMember.save({ session });
       }
 
-      // Tambahkan sebagai anggota baru
-      const newMember = new PoolMember({
-        pool_id: pool._id,
-        user_id: joinRequestDoc.user_id,
-        role: PoolMemberRole.MEMBER,
-        joined_date: new Date().toISOString(),
-      });
-      await newMember.save();
+      joinRequestDoc.status = newStatus;
+      joinRequestDoc.resolved_at = new Date();
+      joinRequestDoc.resolver_user_id = new mongoose.Types.ObjectId(adminUserId);
 
-      joinRequestDoc.status = JoinRequestStatus.APPROVED;
-    } else if (newStatus === JoinRequestStatus.REJECTED) {
-      joinRequestDoc.status = JoinRequestStatus.REJECTED;
-    }
-
-    joinRequestDoc.resolved_at = new Date().toISOString();
-    joinRequestDoc.resolver_user_id = adminUserId as any;
-    await joinRequestDoc.save();
+      updatedRequest = await joinRequestDoc.save({ session });
+    });
 
     return NextResponse.json(
       {
         success: true,
         message: `Permintaan bergabung telah berhasil di-${newStatus === JoinRequestStatus.APPROVED ? "setujui" : "tolak"}.`,
-        updatedRequest: joinRequestDoc,
+        updatedRequest,
       },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error("UPDATE_JOIN_REQUEST_ERROR:", error);
-    if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map((val: any) => val.message);
-      return NextResponse.json({ success: false, message: messages.join(", ") }, { status: 400 });
-    }
+    console.error("PATCH_JOIN_REQUEST_ERROR:", error);
+
+    if (error.message === "NOT_FOUND") return NextResponse.json({ success: false, message: "Permintaan bergabung tidak ditemukan." }, { status: 404 });
+    if (error.message === "ALREADY_PROCESSED") return NextResponse.json({ success: false, message: "Permintaan ini sudah diproses sebelumnya." }, { status: 409 });
+    if (error.message === "POOL_NOT_FOUND") return NextResponse.json({ success: false, message: "Pool terkait tidak ditemukan. Terjadi inkonsistensi data." }, { status: 500 });
+    if (error.message === "FORBIDDEN") return NextResponse.json({ success: false, message: "Akses ditolak: Anda bukan admin pool ini." }, { status: 403 });
+    if (error.message === "POOL_FULL") return NextResponse.json({ success: false, message: "Gagal menyetujui: Pool sudah penuh." }, { status: 409 });
+    if (error.message === "USER_ALREADY_MEMBER") return NextResponse.json({ success: false, message: "Gagal menyetujui: Pengguna ini sudah menjadi anggota pool." }, { status: 409 });
+    if (error.code === 11000) return NextResponse.json({ success: false, message: "Gagal menambahkan anggota. Kemungkinan pengguna ini sudah menjadi anggota." }, { status: 409 });
+
     return NextResponse.json({ success: false, message: "Terjadi kesalahan pada server." }, { status: 500 });
+  } finally {
+    await session.endSession();
   }
 }

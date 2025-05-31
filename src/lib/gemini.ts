@@ -1,5 +1,19 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { IFacility, IUser } from "@/types";
+import { ExpenseCategory, IFacility, IUser } from "@/types";
+import * as fs from "fs";
+
+export interface ParsedReceiptData {
+  items: Array<{
+    medicine_name: string;
+    quantity?: number;
+    unit_price?: number;
+    total_price: number;
+    category: ExpenseCategory;
+  }>;
+  totalAmount?: number;
+  facilityName?: string;
+  transactionDate?: string;
+}
 
 const apiKey = process.env.GEMINI_API_KEY ?? "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -220,12 +234,7 @@ export async function enrichFacilityDataWithGemini(facility: IFacility): Promise
   }
 }
 
-export async function searchFacilitiesWithGemini(
-  query: string,
-  userLocation: { latitude: number; longitude: number },
-  maxDistanceKm: number,
-  maxBudget: number
-): Promise<Partial<IFacility>[]> {
+export async function searchFacilitiesWithGemini(query: string, userLocation: { latitude: number; longitude: number }, maxDistanceKm: number, maxBudget: number): Promise<Partial<IFacility>[]> {
   const prompt = `
     **Task**: You are a healthcare facility search expert. Analyze the user's search query and find the most relevant healthcare facilities.
     
@@ -263,30 +272,23 @@ export async function searchFacilitiesWithGemini(
     const result = await model.generateContent(prompt);
     const response = result.response;
     let text = response.text().trim();
-    
+
     text = text.replace(/```json|```/g, "").trim();
-    
+
     if (!text.startsWith("[") || !text.endsWith("]")) {
       console.error("Unexpected Gemini response format:", text);
       return [];
     }
-    
+
     try {
       const facilities = JSON.parse(text);
-      
-      const validFacilities = facilities.filter(
-        (facility: any) => 
-          facility && 
-          facility.name && 
-          facility.address && 
-          (facility.latitude !== undefined && facility.longitude !== undefined)
-      );
-      
+
+      const validFacilities = facilities.filter((facility: any) => facility && facility.name && facility.address && facility.latitude !== undefined && facility.longitude !== undefined);
+
       return validFacilities.map((facility: any, index: number) => ({
         ...facility,
         _id: `search-${Date.now()}-${index}`,
       }));
-      
     } catch (parseError) {
       console.error("Error parsing Gemini search results:", parseError);
       return [];
@@ -297,5 +299,237 @@ export async function searchFacilitiesWithGemini(
   }
 }
 
+interface GeminiExtractionResult {
+  items: Array<{
+    name: string;
+    quantity?: number;
+    unit_price?: number;
+    total_price: number;
+    category?: ExpenseCategory;
+  }>;
+  overall_total?: number;
+  store_name?: string;
+  transaction_date?: string;
+}
 
+export async function processReceiptWithGemini(imagePath: string): Promise<ParsedReceiptData | null> {
+  const apiKey = process.env.GEMINI_API_KEY ?? "";
+  if (!apiKey) {
+    console.error("GEMINI_API_KEY is not set.");
+    throw new Error("Konfigurasi AI tidak lengkap.");
+  }
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  const imageBuffer = fs.readFileSync(imagePath);
+  const imageBase64 = imageBuffer.toString("base64");
+
+  const prompt = `
+    Anda adalah AI ahli dalam membaca struk pembelian, khususnya struk medis, apotek, atau rumah sakit.
+    Tugas Anda adalah mengekstrak informasi detail dari gambar struk yang diberikan.
+
+    Format Output yang DIHARAPKAN (WAJIB JSON VALID):
+    {
+      "items": [
+        {
+          "name": "NAMA_PRODUK_ATAU_LAYANAN",
+          "quantity": JUMLAH_PRODUK (angka, jika ada, default 1),
+          "unit_price": HARGA_SATUAN_PRODUK (angka, jika ada),
+          "total_price": TOTAL_HARGA_PRODUK_INI (angka, wajib ada),
+          "category": "KATEGORI_PENGELUARAN" (pilih dari: ${Object.values(ExpenseCategory).join(", ")}. Jika tidak yakin, gunakan 'OTHER'.)
+        }
+      ],
+      "overall_total": TOTAL_KESELURUHAN_PEMBAYARAN (angka, jika tertera jelas),
+      "store_name": "NAMA_TOKO_ATAU_FASILITAS_KESEHATAN" (jika tertera),
+      "transaction_date": "YYYY-MM-DD" (TANGGAL_TRANSAKSI, jika tertera, format YYYY-MM-DD)
+    }
+
+    Aturan Penting:
+    1.  Fokus pada item pembelian, harga, nama tempat, dan tanggal.
+    2.  Jika kuantitas atau harga satuan tidak jelas, Anda boleh mengosongkannya, tetapi 'name' dan 'total_price' untuk setiap item HARUS ADA.
+    3.  Jika ada beberapa item, pastikan semua tercatat dalam array "items".
+    4.  Jika struk sangat tidak jelas atau bukan struk pembelian, kembalikan JSON dengan array "items" kosong.
+    5.  Untuk 'category', cobalah untuk mengklasifikasikan berdasarkan nama item. Misalnya, jika ada kata "obat", "sirup", "tablet", gunakan "MEDICATION". Jika "konsultasi", "dokter", gunakan "CONSULTATION". Jika "lab", "tes darah", gunakan "LAB_FEE". Default ke "OTHER".
+    6.  Pastikan output SELALU berupa string JSON yang valid. Jangan tambahkan penjelasan atau teks lain di luar JSON.
+
+    Analisis gambar struk berikut dan berikan output JSON sesuai format di atas.
+  `;
+
+  try {
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: imageBase64,
+          mimeType: "image/jpeg",
+        },
+      },
+    ]);
+    const responseText = result.response.text().trim();
+
+    const cleanedText = responseText.replace(/^```json\s*|```$/g, "").trim();
+
+    console.log("Gemini OCR Raw Response:", cleanedText);
+    const parsed = JSON.parse(cleanedText) as GeminiExtractionResult;
+
+    const transformedData: ParsedReceiptData = {
+      items: parsed.items.map((item) => ({
+        medicine_name: item.name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+        category: item.category || ExpenseCategory.OTHER,
+      })),
+      totalAmount: parsed.overall_total,
+      facilityName: parsed.store_name,
+      transactionDate: parsed.transaction_date,
+    };
+
+    return transformedData;
+  } catch (error) {
+    console.error("Error processing receipt with Gemini:", error);
+    throw new Error("AI gagal memproses gambar struk.");
+  }
+}
+
+export async function generateSpendingRecommendations(expenses: any[], expenseCount: number = 0): Promise<string[]> {
+  const apiKey = process.env.GEMINI_API_KEY ?? "";
+  if (!apiKey) {
+    console.error("GEMINI_API_KEY is not set.");
+    throw new Error("Konfigurasi AI tidak lengkap.");
+  }
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  const hasExpenses = expenses && expenses.length > 0;
+  const hasLimitedData = hasExpenses && expenses.length < 3;
+
+  const simplifiedExpenses = hasExpenses
+    ? expenses
+        .map((expense) => ({
+          category: expense.category,
+          total_price: expense.total_price,
+          medicine_name: expense.medicine_name,
+          facility_name: expense.facility_name,
+          transaction_date: expense.transaction_date,
+        }))
+        .slice(0, 50)
+    : [];
+
+  let prompt = "";
+
+  if (!hasExpenses) {
+    prompt = `
+      Anda adalah seorang penasihat keuangan pribadi yang fokus pada pengeluaran kesehatan.
+      
+      Pengguna belum memiliki data pengeluaran kesehatan. Berikan 3 rekomendasi umum yang bermanfaat untuk pengelolaan keuangan kesehatan.
+      
+      Fokuskan pada:
+      1. Cara merencanakan anggaran kesehatan
+      2. Tips penghematan biaya kesehatan
+      3. Pentingnya asuransi atau proteksi kesehatan
+      
+      Berikan rekomendasi dalam format array JSON dengan 3 string rekomendasi yang jelas, konkret, dan membantu.
+      Setiap rekomendasi harus spesifik dan langsung diterapkan, misalnya "Alokasikan sekitar 10-15% dari pendapatan bulanan Anda untuk dana darurat kesehatan."
+      
+      Format output yang diharapkan:
+      ["Rekomendasi pertama yang spesifik.", "Rekomendasi kedua yang jelas.", "Rekomendasi ketiga yang konkret."]
+      
+      Pastikan output HANYA berupa array JSON string tersebut tanpa komentar tambahan.
+    `;
+  } else if (hasLimitedData) {
+    prompt = `
+      Anda adalah seorang penasihat keuangan pribadi yang fokus pada pengeluaran kesehatan.
+      
+      Pengguna memiliki data pengeluaran kesehatan yang masih terbatas (kurang dari 3 transaksi). Berikan 3 rekomendasi yang menggabungkan wawasan dari data yang ada dengan saran umum yang bermanfaat.
+      
+      Data Pengeluaran Terbatas Pengguna:
+      ${JSON.stringify(simplifiedExpenses, null, 2)}
+      
+      Fokuskan pada:
+      1. Wawasan dari kategori pengeluaran yang sudah terlihat
+      2. Tips pengelolaan keuangan kesehatan berdasarkan pola awal pengeluaran
+      3. Saran umum untuk persiapan kesehatan di masa depan
+      
+      Berikan rekomendasi dalam format array JSON dengan 3 string rekomendasi yang jelas, konkret, dan membantu.
+      Rekomendasi pertama harus dikaitkan dengan data pengguna, sedangkan yang lainnya dapat berupa saran umum yang relevan.
+      
+      Format output yang diharapkan:
+      ["Rekomendasi pertama berdasarkan data yang ada.", "Rekomendasi kedua yang jelas dan relevan.", "Rekomendasi ketiga yang konkret."]
+      
+      Pastikan output HANYA berupa array JSON string tersebut tanpa komentar tambahan.
+    `;
+  } else {
+    prompt = `
+      Anda adalah seorang penasihat keuangan pribadi yang fokus pada pengeluaran kesehatan.
+      Berdasarkan data riwayat pengeluaran kesehatan pengguna berikut, berikan 3 rekomendasi praktis dan spesifik untuk membantu pengguna mengelola keuangan kesehatannya dengan lebih baik.
+      
+      Fokuskan pada:
+      1. Pola pengeluaran yang terlihat
+      2. Potensi penghematan yang mungkin dilakukan
+      3. Alokasi dana yang lebih efisien
+      4. Tips konkret berdasarkan kategori pengeluaran terbesar
+
+      Data Pengeluaran Pengguna:
+      ${JSON.stringify(simplifiedExpenses, null, 2)}
+
+      Berikan rekomendasi dalam format array JSON dengan 3 string rekomendasi yang jelas, konkret, dan membantu.
+      Setiap rekomendasi harus langsung dan spesifik, misalnya "Pertimbangkan untuk mendaftar asuransi X yang cocok dengan pola pengeluaran Anda pada kategori Y."
+      
+      Format output yang diharapkan:
+      ["Rekomendasi pertama yang spesifik.", "Rekomendasi kedua yang jelas.", "Rekomendasi ketiga yang konkret."]
+      
+      Pastikan output HANYA berupa array JSON string tersebut tanpa komentar tambahan.
+    `;
+  }
+
+  try {
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text().trim();
+    const cleanedText = responseText.replace(/^```json\s*|```$/g, "").trim();
+
+    console.log("Gemini Spending Recommendation Raw Response:", cleanedText);
+
+    try {
+      const recommendations = JSON.parse(cleanedText);
+      if (Array.isArray(recommendations) && recommendations.length > 0) {
+        return recommendations.slice(0, 3);
+      } else {
+        console.error("Invalid recommendations format from Gemini:", recommendations);
+        return generateFallbackRecommendations(hasExpenses, simplifiedExpenses);
+      }
+    } catch (parseError) {
+      console.error("Error parsing Gemini recommendations:", parseError, "Raw text:", cleanedText);
+      return generateFallbackRecommendations(hasExpenses, simplifiedExpenses);
+    }
+  } catch (error) {
+    console.error("Error generating spending recommendations with Gemini:", error);
+    return generateFallbackRecommendations(hasExpenses, simplifiedExpenses);
+  }
+}
+
+function generateFallbackRecommendations(hasExpenses: boolean, expenses: any[]): string[] {
+  if (!hasExpenses || expenses.length === 0) {
+    return [
+      "Alokasikan 5-10% dari pendapatan bulanan Anda untuk dana darurat kesehatan.",
+      "Pertimbangkan untuk mendaftar asuransi kesehatan yang sesuai dengan kebutuhan Anda.",
+      "Bandingkan harga obat di beberapa apotek untuk mendapatkan penawaran terbaik.",
+    ];
+  } else if (expenses.length < 3) {
+    const categories = [...new Set(expenses.map((e) => e.category))];
+    const categoryText = categories.length > 0 ? categories.join(", ") : "kesehatan";
+
+    return [
+      `Lanjutkan mencatat pengeluaran ${categoryText} Anda untuk mendapatkan rekomendasi yang lebih personal.`,
+      "Pertimbangkan untuk menyiapkan dana darurat khusus untuk biaya kesehatan tidak terduga.",
+      "Cek apakah asuransi atau BPJS Kesehatan dapat membantu mengurangi biaya pengobatan Anda.",
+    ];
+  } else {
+    return [
+      "Evaluasi pengeluaran kesehatan Anda secara berkala untuk mengidentifikasi area penghematan.",
+      "Pertimbangkan apakah asuransi kesehatan tambahan diperlukan berdasarkan pola pengeluaran Anda.",
+      "Bandingkan harga dan kualitas layanan kesehatan di beberapa fasilitas untuk mendapatkan nilai terbaik.",
+    ];
+  }
+}
 

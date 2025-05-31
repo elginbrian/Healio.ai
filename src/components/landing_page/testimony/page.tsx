@@ -46,7 +46,7 @@ const Testimony = () => {
   };
 
   return (
-    <div className="w-full px-4 md:px-72">
+    <div className="w-full pb-48 px-4 md:px-72">
       <p className="text-5xl text-[var(--color-p-300)] font-semibold mb-12 text-center">Apa Kata Mereka</p>
 
 

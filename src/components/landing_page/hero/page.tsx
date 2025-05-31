@@ -4,7 +4,7 @@ import React from "react";
 
 const Hero = () => {
   return (
-    <div className="relative w-full h-[900px] px-12 mt-8">
+    <div className="relative w-full h-[900px] px-12 mb-48 mt-8">
       <div className="absolute inset-0 z-10 rounded-4xl"></div>
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-4">
         <h1 className="text-6xl font-bold text-white shadow-lg">Selamat datang di Healio.ai</h1>

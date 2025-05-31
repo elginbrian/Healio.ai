@@ -51,7 +51,7 @@ const Sidebar = () => {
 
   const handleLogout = () => {
     try {
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('authToken'); 
       console.log('User logged out successfully.');
       router.push('/login');
     } catch (error) {
@@ -115,15 +115,15 @@ const Sidebar = () => {
           name="logout"
           label="Log Out"
           active={false}
-          onClick={handleLogout}
+          onClick={handleLogout} 
           icon={FaSignOutAlt} 
           expanded={expanded}
         />
       </div>
 
-      <div className="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-1/2 z-10">
-        <button
-          onClick={toggleSidebar}
+      <div className="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-1/2 z-10"> {/* z-10 to ensure it's above other content */}
+        <button 
+          onClick={toggleSidebar} 
           className="w-12 h-12 rounded-full bg-[var(--color-p-300)] flex items-center justify-center shadow-md hover:bg-[var(--color-p-400)] transition-colors duration-200"
           aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
         >

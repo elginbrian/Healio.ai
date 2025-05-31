@@ -5,7 +5,7 @@ import { PlusSquare, Globe, ListChecks, Loader2, PlusCircle, LogIn } from "lucid
 import PoolCard from "@/components/microfunding/pool_card/page";
 import NotifProfile from "@/components/notification_profile/page";
 import FooterDashboard from "@/components/landing_page/footer/footer_dashboard/page";
-import CreatePoolForm from "@/components/microfunding/create_pool_form/page";
+import CreatePoolForm, { CreatePoolFormProps } from "@/components/dashboard/create-pool-form";
 import JoinPoolForm from "@/components/microfunding/join_pool_form/page";
 import JoinPoolSuccess from "@/components/microfunding/success_join/page";
 import { useRouter } from "next/navigation";

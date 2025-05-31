@@ -3,7 +3,7 @@ import React from 'react'
 
 const Features = () => {
     return (
-        <div className=''>
+        <div className='pb-48'>
             <p className="text-5xl text-[var(--color-p-300)] font-semibold mb-12 text-center">
                 Fitur Healio.ai
             </p>
