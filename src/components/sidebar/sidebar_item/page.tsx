@@ -1,6 +1,4 @@
-import React from "react";
-import { IconType } from "react-icons"; // Pastikan IconType diimport
-import { FiLogOut } from "react-icons/fi"; // Tambahkan ini untuk contoh
+import { IconType } from "react-icons"; 
 
 interface SidebarItemProps {
   name: string;
@@ -9,7 +7,7 @@ interface SidebarItemProps {
   onClick: () => void;
   activeSrc?: string;
   inactiveSrc?: string;
-  icon?: IconType; // Type IconType, tidak perlu null secara eksplisit karena sudah opsional
+  icon?: IconType; 
   expanded?: boolean;
 }
 
@@ -35,4 +33,4 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ name, label, active, onClick,
   );
 };
 
-export default SidebarItem;
+export default SidebarItem
