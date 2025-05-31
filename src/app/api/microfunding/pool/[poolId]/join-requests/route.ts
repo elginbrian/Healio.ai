@@ -8,12 +8,10 @@ import mongoose from "mongoose";
 import PoolMember from "@/models/pool-member";
 import JoinRequest from "@/models/join-request";
 
-// Perubahan 1: Hapus interface 'Context' dan perbarui tanda tangan fungsi GET
 export async function GET(request: NextRequest, { params }: { params: Promise<{ poolId: string }> }) {
   try {
     await connectToDatabase();
-    // Perubahan 2: Gunakan 'await' untuk mendapatkan 'poolId' dari params
-    const { poolId } = await params;
+    const { poolId } = await params; // Properly await and destructure the params
 
     const adminUserId = getUserIdFromToken(request.headers.get("Authorization"));
     if (!adminUserId) {
@@ -25,7 +23,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Verifikasi apakah pengguna adalah admin dari pool ini
-    const adminMembership = await PoolMember.findOne({ pool_id: poolId, user_id: adminUserId, role: PoolMemberRole.ADMIN });
+    const adminMembership = await PoolMember.findOne({
+      pool_id: new mongoose.Types.ObjectId(poolId),
+      user_id: new mongoose.Types.ObjectId(adminUserId),
+      role: PoolMemberRole.ADMIN,
+    });
+
     if (!adminMembership) {
       return NextResponse.json({ success: false, message: "Akses ditolak: Anda bukan admin pool ini." }, { status: 403 });
     }
@@ -33,7 +36,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { searchParams } = new URL(request.url);
     const statusFilter = searchParams.get("status");
 
-    const query: any = { pool_id: poolId };
+    const query: any = { pool_id: new mongoose.Types.ObjectId(poolId) };
     if (statusFilter && Object.values(JoinRequestStatus).includes(statusFilter as JoinRequestStatus)) {
       query.status = statusFilter as JoinRequestStatus;
     } else {
@@ -42,8 +45,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const requests = await JoinRequest.find(query)
-      .populate<{ user_id: typeof User }>("user_id", "name email") // Ambil nama dan email user pemohon
-      .sort({ requested_at: -1 }); // Urutkan berdasarkan tanggal permintaan terbaru
+      .populate("user_id", "name email") // Ambil nama dan email user pemohon
+      .sort({ requested_at: -1 })
+      .lean();
 
     return NextResponse.json({ success: true, requests }, { status: 200 });
   } catch (error: any) {

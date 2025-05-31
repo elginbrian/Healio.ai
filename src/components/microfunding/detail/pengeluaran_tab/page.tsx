@@ -1,149 +1,92 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
-import { Hospital, Pill, Stethoscope } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from "react";
+import { ChevronUp, ChevronDown, Loader2, Hospital, Pill, Stethoscope, CheckCircle } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
-
-interface Expense {
-  _id: string;
-  type: string;
-  description: string;
-  hospital?: string;
-  date: Date | string;
-  amount: number;
-  status: string;
-  claimant?: {
-    _id: string;
-    name: string;
-  };
-  createdAt?: string;
-}
+import { IDisbursement, DisbursementStatus } from "@/types"; // Use IDisbursement
 
 interface PengeluaranTabProps {
   poolId?: string;
 }
 
 const PengeluaranTab = ({ poolId }: PengeluaranTabProps) => {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenses, setExpenses] = useState<IDisbursement[]>([]); // Changed to IDisbursement
   const [isLoading, setIsLoading] = useState(true);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  const fetchActualExpenses = useCallback(async () => {
+    // Renamed function
+    if (!poolId) return;
+
+    setIsLoading(true);
+    try {
+      // Fetch disbursements that are considered actual expenses
+      const response = await api.get(`/api/microfunding/pool/${poolId}/disbursements?status=${DisbursementStatus.DISBURSED}`);
+      // Or you might want to include APPROVED ones too: ?status=DISBURSED&status=APPROVED
+      if (response.data.success) {
+        // Sort by disbursement_date or resolved_at if disbursement_date is not set yet
+        const sortedData = response.data.disbursements.sort((a: IDisbursement, b: IDisbursement) => {
+          const dateA = new Date(a.disbursement_date || a.resolved_at || a.request_date).getTime();
+          const dateB = new Date(b.disbursement_date || b.resolved_at || b.request_date).getTime();
+          return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+        });
+        setExpenses(sortedData || []);
+      } else {
+        toast.error(response.data.message || "Gagal memuat daftar pengeluaran.");
+      }
+    } catch (error: any) {
+      console.error("Error fetching actual expenses:", error);
+      toast.error(error.response?.data?.message || "Terjadi kesalahan saat memuat pengeluaran.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [poolId, sortOrder]); // Add sortOrder dependency
 
   useEffect(() => {
-    if (!poolId) return;
-    
-    const fetchExpenses = async () => {
-      setIsLoading(true);
-      try {
-        const response = await api.get(`/api/microfunding/pool/${poolId}/expenses`);
-        if (response.data.success) {
-          setExpenses(response.data.expenses || []);
-        } else {
-          toast.error(response.data.message || "Gagal memuat daftar pengeluaran");
-        }
-      } catch (error: any) {
-        console.error("Error fetching expenses:", error);
-        
-        const placeholderExpenses = [
-          {
-            _id: "expense1",
-            type: 'Rawat Inap',
-            description: 'Rawat Inap - Johan Arizona',
-            hospital: 'RS Medika Sejahtera',
-            date: new Date('2023-03-05'),
-            amount: 3500000,
-            status: 'APPROVED',
-            claimant: { _id: 'user1', name: 'Johan Arizona' }
-          },
-          {
-            _id: "expense2",
-            type: 'Rawat Inap',
-            description: 'Rawat Inap - Andreas Bagaskoro',
-            hospital: 'RS Harapan Bunda',
-            date: new Date('2023-02-12'),
-            amount: 12000000,
-            status: 'APPROVED',
-            claimant: { _id: 'user2', name: 'Andreas Bagaskoro' }
-          },
-          {
-            _id: "expense3",
-            type: 'Obat',
-            description: 'Obat - Elgin Brian',
-            hospital: 'Apotek Sehat',
-            date: new Date('2023-01-28'),
-            amount: 850000,
-            status: 'APPROVED',
-            claimant: { _id: 'user3', name: 'Elgin Brian' }
-          },
-          {
-            _id: "expense4",
-            type: 'Konsultasi Spesialis',
-            description: 'Konsultasi Spesialis - Rizqi Aditya',
-            hospital: 'Klinik Spesialis Jantung',
-            date: new Date('2023-01-15'),
-            amount: 1200000,
-            status: 'APPROVED',
-            claimant: { _id: 'user4', name: 'Rizqi Aditya' }
-          },
-        ];
-        setExpenses(placeholderExpenses);
-        console.warn("Using placeholder expense data", error.response?.data?.message || error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchExpenses();
-  }, [poolId]);
+    fetchActualExpenses();
+  }, [fetchActualExpenses]);
 
   const toggleSortOrder = () => {
-    setSortOrder(prevOrder => prevOrder === 'asc' ? 'desc' : 'asc');
-    
-    setExpenses(prevExpenses => [...prevExpenses].sort((a, b) => {
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-    }));
+    setSortOrder((prevOrder) => {
+      const newOrder = prevOrder === "asc" ? "desc" : "asc";
+      // Re-sort existing data, or let fetchActualExpenses handle it if it depends on sortOrder
+      setExpenses((prevExpenses) =>
+        [...prevExpenses].sort((a, b) => {
+          const dateA = new Date(a.disbursement_date || a.resolved_at || a.request_date).getTime();
+          const dateB = new Date(b.disbursement_date || b.resolved_at || b.request_date).getTime();
+          return newOrder === "asc" ? dateA - dateB : dateB - dateA;
+        })
+      );
+      return newOrder;
+    });
   };
 
-  const getExpenseIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'rawat inap':
-        return Hospital;
-      case 'obat':
-        return Pill;
-      case 'konsultasi':
-      case 'konsultasi spesialis':
-        return Stethoscope;
-      default:
-        return Hospital;
-    }
+  // This function might need adjustment based on how you categorize 'purpose' or if you add a 'category' field to IDisbursement
+  const getExpenseIcon = (purpose: string) => {
+    const lowerPurpose = purpose.toLowerCase();
+    if (lowerPurpose.includes("rawat inap") || lowerPurpose.includes("hospital")) return Hospital;
+    if (lowerPurpose.includes("obat") || lowerPurpose.includes("medicine") || lowerPurpose.includes("farmasi")) return Pill;
+    if (lowerPurpose.includes("konsultasi") || lowerPurpose.includes("doctor") || lowerPurpose.includes("spesialis")) return Stethoscope;
+    return CheckCircle; // Default icon for a disbursed item
   };
 
-  const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString('id-ID', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric'
+  const formatDate = (date: Date | string | undefined) => {
+    if (!date) return "N/A";
+    return new Date(date).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     });
   };
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-2xl font-bold text-gray-800">Riwayat Pengeluaran</h3>
-        <div className="ml-2 flex flex-col">
-          <ChevronUp 
-            size={16} 
-            className={`cursor-pointer ${sortOrder === 'asc' ? 'text-[var(--color-p-300)]' : 'text-gray-400'} hover:text-gray-600`} 
-            onClick={toggleSortOrder}
-          />
-          <ChevronDown 
-            size={16} 
-            className={`cursor-pointer ${sortOrder === 'desc' ? 'text-[var(--color-p-300)]' : 'text-gray-400'} hover:text-gray-600`} 
-            onClick={toggleSortOrder}
-          />
+        <h3 className="text-2xl font-bold text-gray-800">Riwayat Pengeluaran Pool</h3>
+        <div className="ml-2 flex flex-col cursor-pointer" onClick={toggleSortOrder}>
+          <ChevronUp size={16} className={`${sortOrder === "asc" ? "text-[var(--color-p-300)]" : "text-gray-400"} hover:text-gray-600`} />
+          <ChevronDown size={16} className={`${sortOrder === "desc" ? "text-[var(--color-p-300)]" : "text-gray-400"} hover:text-gray-600`} />
         </div>
       </div>
 
@@ -155,29 +98,28 @@ const PengeluaranTab = ({ poolId }: PengeluaranTabProps) => {
         ) : expenses.length > 0 ? (
           <div className="space-y-3">
             {expenses.map((expense) => {
-              const ExpenseIcon = getExpenseIcon(expense.type);
+              const ExpenseIcon = getExpenseIcon(expense.purpose);
+              const recipientName = (expense.recipient_user_id as any)?.name || "Penerima Tidak Diketahui";
               return (
-                <div key={expense._id} className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm mb-4">
+                <div key={expense._id.toString()} className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-gray-100 rounded-full mr-4">
                       <ExpenseIcon size={24} className="text-gray-500" />
                     </div>
                     <div>
-                      <div className="text-base font-semibold text-gray-800">{expense.description}</div>
+                      <div className="text-base font-semibold text-gray-800">{expense.purpose}</div>
                       <div className="text-sm text-gray-500">
-                        {expense.hospital} • {formatDate(expense.date)}
+                        Untuk: {recipientName} • {formatDate(expense.disbursement_date || expense.resolved_at)}
                       </div>
                     </div>
                   </div>
-                  <div className="text-lg font-bold text-[var(--color-p-300)]">
-                    Rp{expense.amount.toLocaleString('id-ID')}
-                  </div>
+                  <div className="text-lg font-bold text-[var(--color-p-300)]">Rp{expense.amount.toLocaleString("id-ID")}</div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <p className="text-center py-10 text-gray-500">Belum ada pengeluaran yang tercatat.</p>
+          <p className="text-center py-10 text-gray-500">Belum ada pengeluaran yang tercatat dari pool ini.</p>
         )}
       </div>
     </div>
@@ -185,4 +127,3 @@ const PengeluaranTab = ({ poolId }: PengeluaranTabProps) => {
 };
 
 export default PengeluaranTab;
-

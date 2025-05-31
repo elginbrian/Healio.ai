@@ -68,3 +68,18 @@ export enum ContributionStatus {
   SUCCESS = "SUCCESS",
   FAILED = "FAILED",
 }
+
+export enum DisbursementStatus {
+  PENDING_VOTE = "PENDING_VOTE",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  PROCESSING_PAYOUT = "PROCESSING_PAYOUT",
+  DISBURSED = "DISBURSED",
+  FAILED_PAYOUT = "FAILED_PAYOUT",
+  CANCELLED = "CANCELLED",
+}
+
+export enum VoteOption {
+  FOR = "FOR",
+  AGAINST = "AGAINST",
+}
