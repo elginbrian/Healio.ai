@@ -27,29 +27,34 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Note: This is placeholder data until a Claims model is implemented
     // In the future, this would query actual claim data
-    
+
     // Calculate percentage of total funds that have been claimed
     const claimedPercentage = Math.min(0.7, Math.random()); // Random value between 0-0.7 (0-70%)
     const totalBenefitAmount = Math.round(pool.current_amount * claimedPercentage);
-    
+
     // Randomize number of members helped between 1-5
     const membersHelped = Math.max(1, Math.floor(Math.random() * 5));
 
     const stats = {
       membersHelped,
-      totalBenefitAmount
+      totalBenefitAmount,
     };
 
-    return NextResponse.json({ 
-      success: true, 
-      stats 
-    }, { status: 200 });
-    
+    return NextResponse.json(
+      {
+        success: true,
+        stats,
+      },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error("GET_BENEFIT_STATS_ERROR:", error);
-    return NextResponse.json({ 
-      success: false, 
-      message: "Terjadi kesalahan pada server saat mengambil statistik manfaat." 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Terjadi kesalahan pada server saat mengambil statistik manfaat.",
+      },
+      { status: 500 }
+    );
   }
 }
