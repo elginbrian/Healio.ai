@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import SidebarItem from "./sidebar_item/page";
 import { usePathname, useRouter } from "next/navigation";
-import { FaUserCircle, FaChevronRight, FaChevronLeft } from "react-icons/fa";
+import { FaChevronRight, FaChevronLeft, FaSignOutAlt } from "react-icons/fa"; // Menggunakan FaSignOutAlt
 
 const Sidebar = () => {
   const router = useRouter();
@@ -18,8 +18,6 @@ const Sidebar = () => {
       setActiveMenu("microfunding");
     } else if (pathname.includes("/dashboard/expenses")) {
       setActiveMenu("expenses");
-    } else if (pathname.includes("/dashboard/profile")) {
-      setActiveMenu("profile");
     }
   }, [pathname]);
 
@@ -30,6 +28,17 @@ const Sidebar = () => {
 
   const toggleSidebar = () => {
     setExpanded(!expanded);
+  };
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem('authToken'); 
+      console.log('User logged out successfully.');
+      router.push('/login');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      alert('Terjadi kesalahan saat logout. Silakan coba lagi.');
+    }
   };
 
   return (
@@ -57,7 +66,14 @@ const Sidebar = () => {
         </div>
       </div>
       <div className="px-6 mb-6">
-        <SidebarItem name="profile" label="Profil" active={activeMenu === "profile"} onClick={() => handleNavigation("profile")} icon={FaUserCircle} expanded={expanded} />
+        <SidebarItem
+          name="logout"
+          label="Log Out"
+          active={false}
+          onClick={handleLogout} // Call the logout function
+          icon={FaSignOutAlt} // Use the logout icon
+          expanded={expanded}
+        />
       </div>
 
       <div className="absolute top-1/2 right-0 transform -translate-y-1/2 flex items-center">
