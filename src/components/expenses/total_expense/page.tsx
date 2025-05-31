@@ -18,6 +18,7 @@ const TotalExpenseCard = () => (
 
     <div className="flex justify-between items-center z-10">
       <p className="text-white/90 font-medium">Bulan ini</p>
+      <button className="bg-white/20 hover:bg-white/30 text-white text-sm font-medium py-1 px-3 rounded-full transition-colors">Lihat Detail</button>
     </div>
   </div>
 );

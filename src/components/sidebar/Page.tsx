@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import SidebarItem from "./sidebar_item/page";
 import { usePathname, useRouter } from "next/navigation";
-import { FaChevronRight, FaChevronLeft, FaSignOutAlt } from "react-icons/fa"; // Menggunakan FaSignOutAlt
+import { FaUserCircle, FaChevronRight, FaChevronLeft } from "react-icons/fa";
 
 const Sidebar = () => {
   const router = useRouter();
@@ -18,6 +18,8 @@ const Sidebar = () => {
       setActiveMenu("microfunding");
     } else if (pathname.includes("/dashboard/expenses")) {
       setActiveMenu("expenses");
+    } else if (pathname.includes("/dashboard/profile")) {
+      setActiveMenu("profile");
     }
   }, [pathname]);
 
@@ -28,17 +30,6 @@ const Sidebar = () => {
 
   const toggleSidebar = () => {
     setExpanded(!expanded);
-  };
-
-  const handleLogout = () => {
-    try {
-      localStorage.removeItem('authToken'); 
-      console.log('User logged out successfully.');
-      router.push('/login');
-    } catch (error) {
-      console.error('Error during logout:', error);
-      alert('Terjadi kesalahan saat logout. Silakan coba lagi.');
-    }
   };
 
   return (
@@ -66,23 +57,12 @@ const Sidebar = () => {
         </div>
       </div>
       <div className="px-6 mb-6">
-        <SidebarItem
-          name="logout"
-          label="Log Out"
-          active={false}
-          onClick={handleLogout} 
-          icon={FaSignOutAlt} 
-          expanded={expanded}
-        />
+        <SidebarItem name="profile" label="Profil" active={activeMenu === "profile"} onClick={() => handleNavigation("profile")} icon={FaUserCircle} expanded={expanded} />
       </div>
 
-      <div className="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-1/2 z-10"> {/* z-10 to ensure it's above other content */}
-        <button 
-          onClick={toggleSidebar} 
-          className="w-12 h-12 rounded-full bg-[var(--color-p-300)] flex items-center justify-center shadow-md hover:bg-[var(--color-p-400)] transition-colors duration-200"
-          aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          {expanded ? <FaChevronLeft size={16} className="text-white" /> : <FaChevronRight size={16} className="text-white" />}
+      <div className="absolute top-1/2 right-0 transform -translate-y-1/2 flex items-center">
+        <button onClick={toggleSidebar} className="bg-white hover:bg-gray-50 border border-gray-200 rounded-l-full h-20 w-7 flex items-center justify-center shadow-md">
+          {expanded ? <FaChevronLeft size={16} className="text-[var(--color-p-300)]" /> : <FaChevronRight size={16} className="text-[var(--color-p-300)]" />}
         </button>
       </div>
     </div>

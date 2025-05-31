@@ -1,13 +1,36 @@
-const AIRecommendation = () => (
-  <div className='w-full'>
-    <p className='text-[var(--color-p-300)] font-semibold text-xl mb-4'>Rekomendasi AI</p>
-    <div className='shadow-lg rounded-2xl bg-white p-6'>
-      <img src="/img/ai_pink.svg" alt="AI Recommendation" className=' object-cover rounded-lg mb-4' />
-      <p className='text-justify text-gray-700 leading-relaxed'>
-        Anda bisa membeli paket Paracetamol (50 tablet) seharga Rp 45.000 untuk menghemat Rp 5.000 dibandingkan pembelian satuan. Manfaatkan promo konsultasi di klinik terdekat untuk mengurangi biaya hingga 15%. Gunakan diskon tes lab yang ditawarkan oleh rumah sakit mitra untuk penghematan hingga 20%. Pertimbangkan berlangganan paket kesehatan bulanan yang dapat menurunkan biaya konsultasi rutin secara signifikan.
-      </p>
+import React from "react";
+import { Lightbulb } from "lucide-react";
+
+interface AIRecommendationProps {
+  isLoading?: boolean;
+}
+
+const AIRecommendation: React.FC<AIRecommendationProps> = ({ isLoading = false }) => {
+  return (
+    <div className="p-6 bg-white rounded-xl shadow-md mb-6">
+      <div className="flex items-center gap-3 mb-4">
+        <Lightbulb className="text-[var(--color-p-300)]" size={24} />
+        <h2 className="text-xl font-semibold text-gray-800">Rekomendasi AI</h2>
+      </div>
+
+      {isLoading ? (
+        <div className="animate-pulse flex flex-col gap-3">
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+        </div>
+      ) : (
+        <div className="text-gray-600">
+          <p>Berdasarkan pola pengeluaran Anda, kami merekomendasikan:</p>
+          <ul className="list-disc ml-6 mt-2 space-y-1">
+            <li>Alokasikan lebih banyak dana untuk konsultasi rutin</li>
+            <li>Pertimbangkan untuk bergabung dengan asuransi kesehatan</li>
+            <li>Bergabunglah dengan dana komunal untuk pengeluaran besar</li>
+          </ul>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 export default AIRecommendation;

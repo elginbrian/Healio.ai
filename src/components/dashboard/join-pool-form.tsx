@@ -17,7 +17,9 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
       toast.error("Masukkan kode pool terlebih dahulu!");
       return;
     }
-    if (kodePool.trim().length < 6 || kodePool.trim().length > 8) {
+
+    const poolCode = kodePool.trim().toUpperCase();
+    if (poolCode.length < 6 || poolCode.length > 8) {
       toast.error("Kode pool harus terdiri dari 6-8 karakter.");
       return;
     }
@@ -25,7 +27,9 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
     setIsLoading(true);
 
     try {
-      const response = await api.post("/api/microfunding/join-requests", { pool_code: kodePool.trim().toUpperCase() });
+      const response = await api.post("/api/microfunding/join-requests", {
+        pool_code: poolCode,
+      });
 
       if (response.data.success) {
         toast.success(response.data.message || "Permintaan bergabung telah dikirim!");
@@ -35,7 +39,8 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
       }
     } catch (error: any) {
       console.error("Error joining pool:", error);
-      toast.error(error.response?.data?.message || "Terjadi kesalahan saat mengirim permintaan.");
+      const errorMsg = error.response?.data?.message || "Terjadi kesalahan saat mengirim permintaan.";
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -50,20 +55,13 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-3xl max-w-md w-full relative shadow-2xl overflow-hidden">
-
         <div className="px-8 py-6 text-center bg-[var(--color-p-300)]">
-          <button
-            onClick={handleCancel}
-            disabled={isLoading}
-            className="absolute top-4 right-4 text-white hover:text-gray-200 transition p-1 disabled:opacity-50"
-            aria-label="Close form"
-          >
+          <button onClick={handleCancel} disabled={isLoading} className="absolute top-4 right-4 text-white hover:text-gray-200 transition p-1 disabled:opacity-50" aria-label="Close form">
             <X size={24} strokeWidth={2} />
           </button>
           <h2 className="text-2xl font-bold text-white mb-2">Gabung Pool</h2>
           <p className="text-white/90 text-sm">Masukkan kode untuk bergabung dengan pool</p>
         </div>
-
 
         <div className="px-8 py-8">
           <div className="mb-6">
@@ -86,13 +84,8 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
             <p className="text-sm text-gray-500 text-center mt-3">Kode terdiri dari 6-8 karakter alfanumerik.</p>
           </div>
 
-
           <div className="flex gap-4">
-            <button
-              onClick={handleCancel}
-              disabled={isLoading}
-              className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl hover:bg-gray-300 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button onClick={handleCancel} disabled={isLoading} className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl hover:bg-gray-300 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
               Batal
             </button>
             <button
@@ -117,4 +110,3 @@ const JoinPoolForm = ({ onClose, onSuccess }: JoinPoolFormProps) => {
 };
 
 export default JoinPoolForm;
-
