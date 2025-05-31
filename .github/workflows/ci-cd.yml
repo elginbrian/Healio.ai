@@ -15,9 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref_name == 'master' || github.ref_name == 'dev')
     steps:
-      - name: Checkout code (untuk docker-compose.yml)
-        uses: actions/checkout@v4
-
       - name: Deploy MongoDB to server
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -30,10 +27,10 @@ jobs:
             trap 'echo "An error occurred during MongoDB deployment. Exiting..." && exit 1' ERR
 
             SCRIPT_BRANCH_NAME="${{ github.ref_name }}"
-            # Direktori di server untuk menyimpan docker-compose.yml dan file .env terkait MongoDB
-            TARGET_DIR="healio-ai-mongo-infra"
+            REPO_URL="https://github.com/elginbrian/Healio.ai.git" 
+            TARGET_DIR="healio-ai-app-mongo" # Nama direktori bisa disesuaikan
 
-            echo "Deploying MongoDB for branch: $SCRIPT_BRANCH_NAME"
+            echo "Deploying MongoDB for branch: $SCRIPT_BRANCH_NAME from $REPO_URL"
 
             if [ -z "$SCRIPT_BRANCH_NAME" ]; then
               echo "Critical Error: SCRIPT_BRANCH_NAME is empty."
@@ -41,45 +38,55 @@ jobs:
             fi
 
             if [ "$SCRIPT_BRANCH_NAME" = "master" ]; then
-              MONGO_HOST_PORT_VALUE="27017" # Port MongoDB untuk produksi
+              MONGO_HOST_PORT_VALUE="27017"
               MONGO_INITDB_DATABASE_VALUE="healio_db_prod"
             elif [ "$SCRIPT_BRANCH_NAME" = "dev" ]; then
-              MONGO_HOST_PORT_VALUE="27018" # Port MongoDB untuk dev (jika berbeda)
+              MONGO_HOST_PORT_VALUE="27018"
               MONGO_INITDB_DATABASE_VALUE="healio_db_dev"
             else
               echo "Error: Branch '$SCRIPT_BRANCH_NAME' is not 'master' or 'dev'. MongoDB deployment skipped."
-              exit 1 # Keluar jika branch tidak dikenali
+              exit 1
             fi
 
-            echo "Preparing MongoDB deployment directory: $TARGET_DIR"
-            if [ ! -d "$TARGET_DIR" ]; then
-              mkdir -p "$TARGET_DIR"
+            echo "Preparing deployment directory: $TARGET_DIR"
+            if [ -d "$TARGET_DIR" ]; then
+              echo "Removing existing directory: $TARGET_DIR"
+              rm -rf "$TARGET_DIR"
             fi
+
+            echo "Cloning repository $REPO_URL (branch $SCRIPT_BRANCH_NAME) into $TARGET_DIR..."
+            # Jika repositori Anda private, Anda mungkin perlu menggunakan PAT (Personal Access Token)
+            # atau kunci SSH deploy untuk git clone. Untuk repo publik, HTTPS URL sudah cukup.
+            git clone --branch $SCRIPT_BRANCH_NAME $REPO_URL $TARGET_DIR
+
             cd "$TARGET_DIR"
             echo "Successfully changed directory to $TARGET_DIR"
+            echo "Current directory content:"
+            ls -la
 
-            # Salin file docker-compose.yml yang sudah diperbarui (hanya MongoDB)
-            echo "Copying docker-compose.yml for MongoDB..."
-            cp ${{ github.workspace }}/docker-compose.yml ./docker-compose.yml
+            # Pastikan docker-compose.yml ada di root direktori yang di-clone
+            if [ ! -f "./docker-compose.yml" ]; then
+                echo "Error: docker-compose.yml not found in the cloned repository at $(pwd)/docker-compose.yml"
+                exit 1
+            fi
+            echo "Using docker-compose.yml found in cloned repository."
 
             echo "Creating .env file for MongoDB in $TARGET_DIR/.env ..."
             cat > .env <<-EOF
-            MONGO_HOST_PORT=${MONGO_HOST_PORT_VALUE}
-            MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE_VALUE}
-            # MONGO_INITDB_ROOT_USERNAME=admin
-            # MONGO_INITDB_ROOT_PASSWORD=securepassword
+            MONGO_HOST_PORT=\${MONGO_HOST_PORT_VALUE}
+            MONGO_INITDB_DATABASE=\${MONGO_INITDB_DATABASE_VALUE}
+            # Jika Anda menggunakan autentikasi MongoDB, tambahkan:
+            # MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_USER }}
+            # MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_PASSWORD }}
             EOF
 
             echo "Environment variables for MongoDB docker-compose set."
-            echo "MONGO_HOST_PORT=${MONGO_HOST_PORT_VALUE}"
-            echo "MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE_VALUE}"
 
             echo "Pulling latest MongoDB image (if needed)..."
             docker-compose pull mongodb || true
 
             echo "Starting MongoDB service with docker-compose..."
-            # Perintah ini akan menghentikan dan menghapus container lama jika ada perubahan konfigurasi atau image,
-            # lalu membuat yang baru. Volume data akan tetap ada.
+            # Variabel MONGO_HOST_PORT dan MONGO_INITDB_DATABASE akan diambil dari file .env oleh docker-compose
             docker-compose up -d --force-recreate mongodb
 
             echo "MongoDB deployment for branch $SCRIPT_BRANCH_NAME completed successfully."
