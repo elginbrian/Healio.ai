@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { TrendingUp, Loader2, AlertTriangle, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import api from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 interface TotalExpenseCardProps {
   dataVersion: number;
@@ -14,6 +15,7 @@ const TotalExpenseCard = ({ dataVersion }: TotalExpenseCardProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [percentChange, setPercentChange] = useState<number | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -40,6 +42,7 @@ const TotalExpenseCard = ({ dataVersion }: TotalExpenseCardProps) => {
           throw new Error(currentResponse.data.message || "Gagal mengambil ringkasan pengeluaran.");
         }
       } catch (err: any) {
+        console.error("TOTAL_EXPENSE_ERROR:", err);
         setError(err.response?.data?.message || err.message || "Terjadi kesalahan.");
         setTotalSpending(null);
         setLastMonthSpending(null);
@@ -51,6 +54,13 @@ const TotalExpenseCard = ({ dataVersion }: TotalExpenseCardProps) => {
 
     fetchSummary();
   }, [dataVersion]);
+
+  const handleViewDetail = () => {
+    // Navigate to a detailed expense page or expand the current view
+    // For now, we'll just show all expenses by setting the activeTab to "all" in the parent component
+    // This could be improved by creating a dedicated detail page or modal
+    router.push("/dashboard/expenses?view=detail");
+  };
 
   return (
     <div className="flex flex-col justify-between bg-[var(--color-p-300)] rounded-xl p-6 shadow-md overflow-hidden relative min-h-[180px]">
@@ -84,7 +94,11 @@ const TotalExpenseCard = ({ dataVersion }: TotalExpenseCardProps) => {
 
       <div className="flex justify-between items-center z-10 mt-auto">
         {!isLoading && !error && lastMonthSpending !== null && <p className="text-sm text-white/80">Bulan lalu: Rp {lastMonthSpending.toLocaleString("id-ID")}</p>}
-        <button className="bg-white/20 hover:bg-white/30 text-white text-sm font-medium py-1 px-3 rounded-full transition-colors">Lihat Detail</button>
+        <button 
+          onClick={handleViewDetail}
+          className="bg-white/20 hover:bg-white/30 text-white text-sm font-medium py-1 px-3 rounded-full transition-colors">
+          Lihat Detail
+        </button>
       </div>
     </div>
   );

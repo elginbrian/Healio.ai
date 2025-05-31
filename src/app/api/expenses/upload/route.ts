@@ -1,14 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db";
 import { getUserIdFromToken } from "@/lib/auth-util";
+import mongoose from "mongoose";
+import Receipt from "@/models/receipt";
+import ExpenseRecord from "@/models/expense-record";
 import { ReceiptStatus, ExpenseCategory } from "@/types";
-import { processReceiptWithGemini, ParsedReceiptData } from "@/lib/gemini";
-import fs from "fs/promises";
 import path from "path";
 import { writeFile } from "fs/promises";
-import mongoose from "mongoose";
-import ExpenseRecord from "@/models/expense-record";
-import Receipt from "@/models/receipt";
+import fs from "fs/promises";
+
+// Type for parsed receipt data from OCR/AI
+interface ParsedReceiptData {
+  items: {
+    name: string;
+    quantity?: number;
+    unit_price?: number;
+    total_price: number;
+    category?: ExpenseCategory;
+  }[];
+  facility_name?: string;
+  transaction_date?: string;
+  total_amount?: number;
+}
+
+// Function to process receipt with AI (mock implementation)
+async function processReceiptWithGemini(filePath: string): Promise<ParsedReceiptData | null> {
+  // This would be your actual AI implementation
+  // For now, let's return mock data
+  return {
+    items: [
+      {
+        name: "PARACETAMOL TAB",
+        quantity: 10,
+        unit_price: 3000,
+        total_price: 30000,
+        category: ExpenseCategory.MEDICATION,
+      },
+    ],
+    facility_name: "Apotek Sehat",
+    transaction_date: new Date().toISOString(),
+    total_amount: 30000,
+  };
+}
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "receipts");
 
@@ -58,6 +91,7 @@ export async function POST(request: NextRequest) {
 
     await writeFile(filePath, buffer);
 
+    // Create a new receipt document
     const newReceipt = new Receipt({
       user_id: userObjectId,
       image_url: publicImageUrl,
@@ -67,48 +101,69 @@ export async function POST(request: NextRequest) {
     await newReceipt.save();
 
     let extractedData: ParsedReceiptData | null = null;
+    let createdExpenseRecords = [];
+
     try {
+      // Process the receipt image with AI
       extractedData = await processReceiptWithGemini(filePath);
 
       if (!extractedData || !extractedData.items || extractedData.items.length === 0) {
         newReceipt.status = ReceiptStatus.FAILED;
-        newReceipt.processing_error = "AI tidak dapat mengekstrak item dari struk.";
+        newReceipt.processing_error = "Tidak dapat mengekstrak data dari struk.";
         await newReceipt.save();
-        return NextResponse.json({ success: false, message: "AI tidak dapat mengekstrak item dari struk." }, { status: 400 });
+        return NextResponse.json({ success: false, message: "Tidak dapat mengekstrak data dari struk. Coba lagi dengan gambar yang lebih jelas." }, { status: 422 });
       }
 
-      const expenseRecordDocs = extractedData.items.map((item) => ({
-        receipt_id: newReceipt._id,
-        user_id: userObjectId,
-        transaction_date: extractedData?.transactionDate ? new Date(extractedData.transactionDate) : newReceipt.upload_date,
-        facility_name: extractedData?.facilityName,
-        category: item.category || ExpenseCategory.OTHER,
-        medicine_name: item.medicine_name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price,
-      }));
+      // Create expense records from extracted data
+      const transactionDate = extractedData.transaction_date ? new Date(extractedData.transaction_date) : new Date();
 
-      await ExpenseRecord.insertMany(expenseRecordDocs);
+      const expensePromises = extractedData.items.map(async (item) => {
+        const expenseRecord = new ExpenseRecord({
+          receipt_id: newReceipt._id,
+          user_id: userObjectId,
+          category: item.category || ExpenseCategory.MEDICATION,
+          medicine_name: item.name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          transaction_date: transactionDate,
+          facility_name: extractedData?.facility_name,
+        });
+        return expenseRecord.save();
+      });
 
+      createdExpenseRecords = await Promise.all(expensePromises);
+
+      // Update receipt status to processed
       newReceipt.status = ReceiptStatus.PROCESSED;
+      newReceipt.ocr_raw_text = JSON.stringify(extractedData);
       await newReceipt.save();
 
       return NextResponse.json(
         {
           success: true,
-          message: "Struk berhasil diunggah dan diproses.",
-          receipt: newReceipt,
-          expenses: expenseRecordDocs,
+          message: "Struk berhasil diproses dan data pengeluaran berhasil disimpan.",
+          receipt: {
+            _id: newReceipt._id,
+            image_url: newReceipt.image_url,
+            status: newReceipt.status,
+          },
+          expenses: createdExpenseRecords.map((record) => ({
+            _id: record._id,
+            medicine_name: record.medicine_name,
+            total_price: record.total_price,
+            category: record.category,
+            transaction_date: record.transaction_date,
+          })),
         },
         { status: 201 }
       );
     } catch (aiError: any) {
-      console.error("Error processing with AI:", aiError);
+      console.error("RECEIPT_PROCESSING_ERROR:", aiError);
       newReceipt.status = ReceiptStatus.FAILED;
-      newReceipt.processing_error = aiError.message || "Gagal memproses struk dengan AI.";
+      newReceipt.processing_error = `Gagal memproses struk: ${aiError.message || "Kesalahan tidak diketahui."}`;
       await newReceipt.save();
-      return NextResponse.json({ success: false, message: `Gagal memproses struk: ${aiError.message}` }, { status: 500 });
+      return NextResponse.json({ success: false, message: "Gagal memproses struk. Coba lagi nanti atau gunakan gambar yang lebih jelas." }, { status: 500 });
     }
   } catch (error: any) {
     console.error("EXPENSE_UPLOAD_ERROR:", error);

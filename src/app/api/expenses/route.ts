@@ -1,56 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db";
+import ExpenseRecord from "@/models/expense-record";
 import { getUserIdFromToken } from "@/lib/auth-util";
 import mongoose from "mongoose";
-import ExpenseRecord from "@/models/expense-record";
 
 export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
-    const userId = getUserIdFromToken(request.headers.get("Authorization"));
 
+    const userId = getUserIdFromToken(request.headers.get("Authorization"));
     if (!userId) {
       return NextResponse.json({ success: false, message: "Akses ditolak: Tidak terautentikasi." }, { status: 401 });
     }
-    const userObjectId = new mongoose.Types.ObjectId(userId);
 
     const { searchParams } = new URL(request.url);
+
+    // Pagination parameters
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const category = searchParams.get("category");
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
+    const limit = parseInt(searchParams.get("limit") || "5");
+    const skip = (page - 1) * limit;
+
+    // Sorting parameters
     const sortBy = searchParams.get("sortBy") || "transaction_date";
-    const sortOrder = searchParams.get("sortOrder") === "asc" ? 1 : -1;
+    const sortOrder = searchParams.get("sortOrder") || "desc";
+    const sortDirection = sortOrder === "desc" ? -1 : 1;
 
-    const query: any = { user_id: userObjectId };
+    // Filtering parameters
+    const startDate = searchParams.get("startDate") ? new Date(searchParams.get("startDate") as string) : null;
+    const endDate = searchParams.get("endDate") ? new Date(searchParams.get("endDate") as string) : null;
+    const category = searchParams.get("category");
 
-    if (category) {
-      query.category = category;
-    }
+    // Build filter object
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const filter: any = { user_id: userObjectId };
+
+    // Add date filter if provided
     if (startDate && endDate) {
-      query.transaction_date = { $gte: new Date(startDate), $lte: new Date(endDate) };
-    } else if (startDate) {
-      query.transaction_date = { $gte: new Date(startDate) };
-    } else if (endDate) {
-      query.transaction_date = { $lte: new Date(endDate) };
+      filter.$or = [
+        { transaction_date: { $gte: startDate, $lte: endDate } },
+        // Also consider createdAt if transaction_date is not available
+        { $and: [{ transaction_date: { $exists: false } }, { createdAt: { $gte: startDate, $lte: endDate } }] },
+      ];
     }
 
-    const sortOptions: any = {};
-    if (sortBy) {
-      sortOptions[sortBy] = sortOrder;
-    } else {
-      sortOptions["transaction_date"] = -1;
+    // Add category filter if provided
+    if (category) {
+      filter.category = category;
     }
 
-    const expenses = await ExpenseRecord.find(query)
-      .populate({ path: "receipt_id", select: "image_url upload_date status" })
-      .sort(sortOptions)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
+    // Execute the query
+    const expenses = await ExpenseRecord.find(filter)
+      .sort({ [sortBy]: sortDirection, _id: -1 }) // Secondary sort by _id to ensure consistent order
+      .skip(skip)
+      .limit(limit);
 
-    const totalExpenses = await ExpenseRecord.countDocuments(query);
+    // Get total count for pagination
+    const totalCount = await ExpenseRecord.countDocuments(filter);
 
     return NextResponse.json(
       {
@@ -58,16 +63,21 @@ export async function GET(request: NextRequest) {
         data: expenses,
         pagination: {
           currentPage: page,
-          totalPages: Math.ceil(totalExpenses / limit),
-          totalExpenses,
-          limit,
+          totalPages: Math.ceil(totalCount / limit),
+          totalItems: totalCount,
+          itemsPerPage: limit,
         },
       },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error("GET_EXPENSES_ERROR:", error);
-    return NextResponse.json({ success: false, message: "Terjadi kesalahan pada server." }, { status: 500 });
+    console.error("EXPENSES_API_ERROR:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Terjadi kesalahan saat mengambil data pengeluaran.",
+      },
+      { status: 500 }
+    );
   }
 }
-

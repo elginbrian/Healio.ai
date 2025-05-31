@@ -12,7 +12,9 @@ import React, { useState, useCallback } from "react";
 const ExpensePage = () => {
   const [dataVersion, setDataVersion] = useState(0);
 
+  // This callback is called when receipt upload is successful
   const handleReceiptUploadSuccess = useCallback(() => {
+    // Increment dataVersion to trigger all components to refresh their data
     setDataVersion((prevVersion) => prevVersion + 1);
   }, []);
 
@@ -23,16 +25,12 @@ const ExpensePage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-16">
           <div className="lg:col-span-5 flex flex-col gap-6">
-
             <TotalExpenseCard dataVersion={dataVersion} />
-
             <UploadReceipt onUploadSuccess={handleReceiptUploadSuccess} />
-
             <AIRecommendation dataVersion={dataVersion} />
           </div>
 
           <div className="lg:col-span-7 flex flex-col gap-6">
-
             <Timeline dataVersion={dataVersion} />
             <RecentExpenses dataVersion={dataVersion} />
           </div>
