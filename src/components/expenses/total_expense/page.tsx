@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { TrendingUp, Loader2, AlertTriangle } from "lucide-react";
+import { TrendingUp, Loader2, AlertTriangle, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import api from "@/lib/api";
 
 interface TotalExpenseCardProps {
@@ -10,24 +10,40 @@ interface TotalExpenseCardProps {
 
 const TotalExpenseCard = ({ dataVersion }: TotalExpenseCardProps) => {
   const [totalSpending, setTotalSpending] = useState<number | null>(null);
+  const [lastMonthSpending, setLastMonthSpending] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [comparisonText, setComparisonText] = useState<string>("dibanding bulan lalu");
+  const [percentChange, setPercentChange] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchSummary = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await api.get("/api/expenses/summary?period=current_month");
-        if (response.data.success && response.data.summary) {
-          setTotalSpending(response.data.summary.totalSpending);
+        const currentResponse = await api.get("/api/expenses/summary?period=current_month");
+        if (currentResponse.data.success && currentResponse.data.summary) {
+          setTotalSpending(currentResponse.data.summary.totalSpending);
+
+          const lastMonthResponse = await api.get("/api/expenses/summary?period=last_month");
+          if (lastMonthResponse.data.success && lastMonthResponse.data.summary) {
+            const lastMonth = lastMonthResponse.data.summary.totalSpending;
+            setLastMonthSpending(lastMonth);
+
+            if (lastMonth > 0) {
+              const change = ((currentResponse.data.summary.totalSpending - lastMonth) / lastMonth) * 100;
+              setPercentChange(change);
+            } else {
+              setPercentChange(null);
+            }
+          }
         } else {
-          throw new Error(response.data.message || "Gagal mengambil ringkasan pengeluaran.");
+          throw new Error(currentResponse.data.message || "Gagal mengambil ringkasan pengeluaran.");
         }
       } catch (err: any) {
         setError(err.response?.data?.message || err.message || "Terjadi kesalahan.");
         setTotalSpending(null);
+        setLastMonthSpending(null);
+        setPercentChange(null);
       } finally {
         setIsLoading(false);
       }
@@ -54,11 +70,12 @@ const TotalExpenseCard = ({ dataVersion }: TotalExpenseCardProps) => {
           </div>
         ) : (
           <div className="flex items-center mt-1">
-            <p className="text-3xl font-bold text-white">Rp. {(totalSpending ?? 0).toLocaleString("id-ID")}</p>
+            <p className="text-3xl font-bold text-white">Rp {(totalSpending ?? 0).toLocaleString("id-ID")}</p>
 
-            {totalSpending !== null && (
-              <div className="ml-2 flex items-center bg-white/20 rounded-full px-2 py-1 text-xs text-white">
-
+            {percentChange !== null && (
+              <div className={`ml-2 flex items-center ${percentChange > 0 ? "bg-red-500/20" : "bg-green-500/20"} rounded-full px-2 py-1 text-xs text-white`}>
+                {percentChange > 0 ? <ArrowUpRight size={14} className="mr-1" /> : <ArrowDownRight size={14} className="mr-1" />}
+                {Math.abs(percentChange).toFixed(1)}%
               </div>
             )}
           </div>
@@ -66,7 +83,7 @@ const TotalExpenseCard = ({ dataVersion }: TotalExpenseCardProps) => {
       </div>
 
       <div className="flex justify-between items-center z-10 mt-auto">
-
+        {!isLoading && !error && lastMonthSpending !== null && <p className="text-sm text-white/80">Bulan lalu: Rp {lastMonthSpending.toLocaleString("id-ID")}</p>}
         <button className="bg-white/20 hover:bg-white/30 text-white text-sm font-medium py-1 px-3 rounded-full transition-colors">Lihat Detail</button>
       </div>
     </div>

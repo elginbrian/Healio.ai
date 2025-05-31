@@ -26,17 +26,26 @@ export async function GET(request: NextRequest) {
       .limit(100)
       .lean();
 
-    if (recentExpenses.length === 0) {
-      return NextResponse.json(
-        {
-          success: true,
-          recommendations: ["Belum ada data pengeluaran yang cukup untuk memberikan rekomendasi."],
+    const spendingByCategory = await ExpenseRecord.aggregate([
+      {
+        $match: {
+          user_id: userObjectId,
+          transaction_date: { $gte: threeMonthsAgo },
         },
-        { status: 200 }
-      );
-    }
+      },
+      {
+        $group: {
+          _id: "$category",
+          total: { $sum: "$total_price" },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { total: -1 } },
+    ]);
 
-    const recommendations = await generateSpendingRecommendations(recentExpenses);
+    const totalSpending = spendingByCategory.reduce((sum, cat) => sum + cat.total, 0);
+
+    const recommendations = await generateSpendingRecommendations(recentExpenses, recentExpenses.length);
 
     return NextResponse.json(
       {

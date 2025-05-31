@@ -7,8 +7,8 @@ import fs from "fs/promises";
 import path from "path";
 import { writeFile } from "fs/promises";
 import mongoose from "mongoose";
-import Receipt from "@/models/receipt";
 import ExpenseRecord from "@/models/expense-record";
+import Receipt from "@/models/receipt";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "receipts");
 
@@ -115,4 +115,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: "Terjadi kesalahan pada server saat mengunggah struk." }, { status: 500 });
   }
 }
-
