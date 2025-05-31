@@ -20,7 +20,6 @@ Healio.ai offers a comprehensive suite of AI-driven features:
 
     - Recommends suitable health centers (puskesmas), clinics, or hospitals based on user profiles (age, chronic conditions, doctor preferences, budget) and facility data (tariffs, ratings from sources like Google Reviews & JKN Care).
     - Allows filtering by maximum distance and facility type (BPJS, public, private).
-    - A cron job (`enrich-facilities.ts`) periodically updates facility data using Gemini AI for discovery and enrichment.
 
 2.  **🤝 Community-Based Microfunding Pool System (Dana Komunal):**
 
@@ -35,7 +34,7 @@ Healio.ai offers a comprehensive suite of AI-driven features:
 3.  **🧾 AI-Assisted Personal Healthcare Expense Tracker:**
     - Utilizes OCR (via Gemini AI) to automatically track and analyze healthcare expenses from uploaded receipts.
     - Displays an expense timeline and spending pattern analysis.
-    - Provides personalized recommendations for cost-saving (e.g., generic drug alternatives, budget-friendly consultation packages).
+    - Provides personalized recommendations for cost-saving 
 
 ## 🧠 Intelligent Approaches
 
