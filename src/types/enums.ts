@@ -62,3 +62,9 @@ export enum ContributionPeriod {
 export enum ClaimApprovalSystem {
   VOTING_50_PERCENT = "VOTING_50_PERCENT",
 }
+
+export enum ContributionStatus {
+  PENDING = "PENDING",
+  SUCCESS = "SUCCESS",
+  FAILED = "FAILED",
+}

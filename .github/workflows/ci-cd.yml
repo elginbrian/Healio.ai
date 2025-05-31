@@ -107,6 +107,9 @@ jobs:
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             NODE_ENV=${TARGET_NODE_ENV}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            MIDTRANS_CLIENT_KEY_SANDBOX=${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }}
+            MIDTRANS_SERVER_KEY_SANDBOX=${{ secrets.MIDTRANS_SERVER_KEY_SANDBOX }}
+            NEXT_PUBLIC_MIDTRANS_CLIENT_KEY_SANDBOX=${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }}
             EOF
 
             export DOCKER_IMAGE_TAG=${IMAGE_TAG} 
@@ -118,6 +121,8 @@ jobs:
             export JWT_SECRET_FOR_COMPOSE="${{ secrets.JWT_SECRET }}"
             export DOCKER_USERNAME_ENV="${{ secrets.DOCKER_USERNAME }}"
             export GEMINI_API_KEY_FOR_COMPOSE="${{ secrets.GEMINI_API_KEY }}"
+            export MIDTRANS_CLIENT_KEY_SANDBOX="${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }}"
+            export MIDTRANS_SERVER_KEY_SANDBOX="${{ secrets.MIDTRANS_SERVER_KEY_SANDBOX }}"
 
             echo "Environment variables for docker-compose set."
             echo "DOCKER_USERNAME_ENV=${DOCKER_USERNAME_ENV}"
