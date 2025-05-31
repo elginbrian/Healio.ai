@@ -49,7 +49,6 @@ jobs:
             IMAGE_TAG="dev"
           else
             echo "Branch $BRANCH not recognized for Docker build. Skipping build and push."
-            # Ensure no output is set if we skip
             echo "IMAGE_NAME_WITH_TAG=" >> $GITHUB_OUTPUT
             exit 0
           fi
@@ -62,8 +61,6 @@ jobs:
           FULL_IMAGE_NAME_WITH_TAG="${IMAGE_NAME_BASE}:${IMAGE_TAG}"
           echo "Image to be built and pushed: ${FULL_IMAGE_NAME_WITH_TAG}"
 
-          # Pass build-time args for NEXT_PUBLIC_ variables
-          # Ensure Dockerfile is prepared to receive these ARGs
           docker buildx build --platform linux/amd64 \
             --build-arg NEXT_PUBLIC_MIDTRANS_CLIENT_KEY_SANDBOX=${{ secrets.MIDTRANS_CLIENT_KEY_SANDBOX }} \
             -t "${FULL_IMAGE_NAME_WITH_TAG}" \
@@ -102,8 +99,9 @@ jobs:
             IMAGE_NAME_FROM_PREVIOUS_JOB="${{ needs.docker.outputs.IMAGE_NAME_WITH_TAG }}"
 
             if [ -z "$IMAGE_NAME_FROM_PREVIOUS_JOB" ]; then
-              echo "::error::Critical Error: IMAGE_NAME_FROM_PREVIOUS_JOB is empty. The 'docker' job may have failed to set the image name output or did not run as expected for this branch."
-              echo "Please check the 'docker' job logs for errors (e.g., DOCKER_USERNAME secret missing, image build/push failure)."
+              echo "::error::Critical Error: IMAGE_NAME_FROM_PREVIOUS_JOB is empty. The 'docker' job may have failed to set the image name output."
+              echo "This often happens if the DOCKER_USERNAME secret is missing/empty, or if the 'docker buildx build --push' command failed (e.g., due to an application build error or invalid image name for push)."
+              echo "Please check the 'docker' job logs for detailed errors."
               exit 1
             fi
 
@@ -138,16 +136,15 @@ jobs:
             APP_IMAGE_NAME_WITH_TAG=${IMAGE_NAME_FROM_PREVIOUS_JOB}
             APP_HOST_PORT=${APP_HOST_PORT_VALUE}
             APP_CONTAINER_PORT=3000
-            MONGO_HOST_PORT=27017 # Consider making this unique per environment if on same host, e.g., 27017 for prod, 27018 for dev
+            MONGO_HOST_PORT=27017 
             MONGO_INITDB_DATABASE=healio_db_${SCRIPT_BRANCH_NAME} 
             TARGET_NODE_ENV=${TARGET_NODE_ENV_VALUE}
-
             JWT_SECRET_FOR_COMPOSE=${{ env.JWT_SECRET_VALUE }}
             GEMINI_API_KEY_FOR_COMPOSE=${{ env.GEMINI_API_KEY_VALUE }}
             MIDTRANS_CLIENT_KEY_SANDBOX_FOR_COMPOSE=${{ env.MIDTRANS_CLIENT_KEY_SANDBOX_VALUE }}
             MIDTRANS_SERVER_KEY_SANDBOX_FOR_COMPOSE=${{ env.MIDTRANS_SERVER_KEY_SANDBOX_VALUE }}
             NEXT_PUBLIC_MIDTRANS_CLIENT_KEY_SANDBOX_FOR_COMPOSE=${{ env.MIDTRANS_CLIENT_KEY_SANDBOX_VALUE }}
-            SCRIPT_BRANCH_NAME=${SCRIPT_BRANCH_NAME} # For docker-compose to use in names
+            SCRIPT_BRANCH_NAME=${SCRIPT_BRANCH_NAME}
             EOF
 
             echo "Pulling the specific Docker image: ${IMAGE_NAME_FROM_PREVIOUS_JOB}"
