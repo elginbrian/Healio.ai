@@ -15,13 +15,11 @@ interface PoolTabsProps {
   currentUserMembership?: IPoolMember | null;
 }
 
-// Prop types for child components (assuming they exist or will be created)
 interface AnggotaTabProps {
   poolId?: string;
 }
 
 interface PengeluaranTabProps {
-  // This will display *actually disbursed* funds
   poolId?: string;
 }
 
@@ -42,40 +40,34 @@ interface UndangAnggotaTabProps {
 }
 
 interface DisbursementsTabProps {
-  // New Prop Type
   poolId?: string;
-  poolDetails?: IMicrofundingPool; // Pass full pool details if needed for voting rules
+  poolDetails?: IMicrofundingPool;
   currentUserMembership?: IPoolMember | null;
 }
 
-// Cast components to their respective prop types
 const AnggotaTabWithProps = AnggotaTab as React.FC<AnggotaTabProps>;
 const PengeluaranTabWithProps = PengeluaranTab as React.FC<PengeluaranTabProps>;
 const KontribusiSayaTabWithProps = KontribusiSayaTab as React.FC<KontribusiSayaTabProps>;
 const PoolSettingsFormWithProps = PoolSettingsForm as React.FC<PoolSettingsFormProps>;
 const UndangAnggotaTabWithProps = UndangAnggotaTab as React.FC<UndangAnggotaTabProps>;
-const DisbursementsTabWithProps = DisbursementsTab as React.FC<DisbursementsTabProps>; // New Cast
+const DisbursementsTabWithProps = DisbursementsTab as React.FC<DisbursementsTabProps>;
 const PoolTabs = ({ initialTab = "Anggota", poolDetails, currentUserMembership }: PoolTabsProps) => {
   const [activeTab, setActiveTab] = useState(initialTab);
 
   const isCurrentUserAdmin = currentUserMembership?.role === "ADMIN";
 
-  // Add "Disbursements" tab
   const tabs = ["Anggota", "Disbursements", "Kontribusi Saya", "Pengeluaran", "Pengaturan Pool", "Undang Anggota"];
 
   const filteredTabs = tabs.filter((tab) => {
-    // Hide admin-only tabs if not admin
     if ((tab === "Pengaturan Pool" || tab === "Undang Anggota") && !isCurrentUserAdmin) {
       return false;
     }
-    // Hide tabs that require membership if user is not a member
     if ((tab === "Kontribusi Saya" || tab === "Disbursements" || tab === "Pengeluaran" || tab === "Anggota") && !currentUserMembership) {
       return false;
     }
     return true;
   });
 
-  // If the initialTab (or activeTab) is filtered out, default to the first available tab
   useEffect(() => {
     if (!filteredTabs.includes(activeTab)) {
       setActiveTab(filteredTabs[0] || "");
@@ -86,26 +78,22 @@ const PoolTabs = ({ initialTab = "Anggota", poolDetails, currentUserMembership }
     switch (activeTab) {
       case "Anggota":
         return <AnggotaTabWithProps poolId={poolDetails?._id} />;
-      case "Disbursements": // New Case
+      case "Disbursements":
         return <DisbursementsTabWithProps poolId={poolDetails?._id} poolDetails={poolDetails} currentUserMembership={currentUserMembership} />;
       case "Kontribusi Saya":
         return <KontribusiSayaTabWithProps poolId={poolDetails?._id} currentUserMembership={currentUserMembership} />;
-      case "Pengeluaran": // This tab will now show *actually disbursed* funds from the Disbursement collection
+      case "Pengeluaran":
         return <PengeluaranTabWithProps poolId={poolDetails?._id} />;
       case "Pengaturan Pool":
         return <PoolSettingsFormWithProps poolDetails={poolDetails} isAdmin={isCurrentUserAdmin} />;
       case "Undang Anggota":
         return <UndangAnggotaTabWithProps poolId={poolDetails?._id} poolCode={poolDetails?.pool_code} isCurrentUserAdmin={isCurrentUserAdmin} />;
       default:
-        // Fallback to the first filtered tab or a specific default if none active
         if (filteredTabs.length > 0 && filteredTabs.includes("Anggota") && currentUserMembership) {
           return <AnggotaTabWithProps poolId={poolDetails?._id} />;
         }
         if (filteredTabs.length > 0) {
-          // Render the first available tab if "Anggota" isn't suitable
-          // This logic might need refinement based on what should be the ultimate default
           if (filteredTabs[0] === "Disbursements") return <DisbursementsTabWithProps poolId={poolDetails?._id} poolDetails={poolDetails} currentUserMembership={currentUserMembership} />;
-          // Add other cases if needed
         }
         return <div className="text-center p-8 text-gray-500">Pilih tab untuk melihat konten.</div>;
     }
@@ -131,3 +119,4 @@ const PoolTabs = ({ initialTab = "Anggota", poolDetails, currentUserMembership }
 };
 
 export default PoolTabs;
+

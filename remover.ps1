@@ -1,4 +1,4 @@
-$projectRoot = "D:\healio-ai"
+$projectRoot = "D:\Healio.ai"
 
 $excludePaths = @(
     "node_modules",

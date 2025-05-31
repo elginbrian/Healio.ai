@@ -23,12 +23,12 @@ const joinRequestSchema = new Schema<IJoinRequest>(
       index: true,
     },
     requested_at: {
-      type: String, // ISO date string
+      type: String,
       default: () => new Date().toISOString(),
       required: true,
     },
     resolved_at: {
-      type: String, // ISO date string
+      type: String,
     },
     resolver_user_id: {
       type: Schema.Types.ObjectId,
@@ -40,13 +40,11 @@ const joinRequestSchema = new Schema<IJoinRequest>(
   }
 );
 
-// Compound index to ensure one pending request per user per pool
 joinRequestSchema.index({ pool_id: 1, user_id: 1, status: 1 }, { unique: true, partialFilterExpression: { status: JoinRequestStatus.PENDING } });
 
-// Define a proper document interface that extends Document and IJoinRequest
 export interface JoinRequestDocument extends Document, Omit<IJoinRequest, "_id"> {}
 
-// Use the specific document interface for the model
 const JoinRequest = models.JoinRequest || mongoose.model<IJoinRequest>("JoinRequest", joinRequestSchema);
 
 export default JoinRequest;
+

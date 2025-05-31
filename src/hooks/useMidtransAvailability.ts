@@ -13,7 +13,6 @@ export const useMidtransAvailability = () => {
     setIsChecking(true);
     setErrorMessage(null);
 
-    // Check if script already exists
     const existingScript = document.querySelector(`script[src^="${MIDTRANS_URL}"]`);
     if (existingScript) {
       existingScript.remove();
@@ -26,7 +25,6 @@ export const useMidtransAvailability = () => {
       script.async = true;
       script.onload = () => {
         console.log("Midtrans script loaded successfully");
-        // Check if window.snap is available after script loads
         if (window.snap) {
           setIsMidtransAvailable(true);
           setErrorMessage(null);
@@ -59,10 +57,8 @@ export const useMidtransAvailability = () => {
   };
 
   useEffect(() => {
-    // Load the script when the component mounts
     loadMidtransScript();
 
-    // Check if window.snap is available periodically (in case it loads late)
     const checkInterval = setInterval(() => {
       if (window.snap) {
         setIsMidtransAvailable(true);
@@ -72,7 +68,6 @@ export const useMidtransAvailability = () => {
       }
     }, 1000);
 
-    // Clean up
     return () => {
       clearInterval(checkInterval);
     };
@@ -80,3 +75,4 @@ export const useMidtransAvailability = () => {
 
   return { isMidtransAvailable, isChecking, errorMessage, retryLoading };
 };
+

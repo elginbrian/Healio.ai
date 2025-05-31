@@ -30,7 +30,7 @@ const DisbursementItem: React.FC<DisbursementItemProps> = ({ disbursement, poolD
   const canVote =
     disbursement.status === DisbursementStatus.PENDING_VOTE &&
     !userVote &&
-    currentUserId !== disbursement.recipient_user_id.toString() && // User cannot vote on their own request
+    currentUserId !== disbursement.recipient_user_id.toString() &&
     new Date(disbursement.voting_deadline || 0) > new Date();
 
   const handleVote = async (voteOption: VoteOption) => {
@@ -42,7 +42,7 @@ const DisbursementItem: React.FC<DisbursementItemProps> = ({ disbursement, poolD
       });
       if (response.data.success) {
         toast.success("Vote Anda berhasil direkam!");
-        onVoteSuccess(); // Refresh the list
+        onVoteSuccess();
       } else {
         toast.error(response.data.message || "Gagal merekam vote.");
       }
@@ -156,7 +156,7 @@ const DisbursementsTab: React.FC<DisbursementsTabProps> = ({ poolId, poolDetails
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { user } = useAuth(); // Get current user from auth context
+  const { user } = useAuth();
 
   const fetchDisbursements = useCallback(async () => {
     if (!poolId) return;
@@ -165,7 +165,6 @@ const DisbursementsTab: React.FC<DisbursementsTabProps> = ({ poolId, poolDetails
     try {
       const response = await api.get(`/api/microfunding/pool/${poolId}/disbursements`);
       if (response.data.success) {
-        // Sort by request_date descending initially
         const sortedData = response.data.disbursements.sort((a: IDisbursement, b: IDisbursement) => new Date(b.request_date).getTime() - new Date(a.request_date).getTime());
         setDisbursements(sortedData || []);
       } else {
@@ -186,7 +185,7 @@ const DisbursementsTab: React.FC<DisbursementsTabProps> = ({ poolId, poolDetails
 
   const handleDisbursementRequested = () => {
     setIsModalOpen(false);
-    fetchDisbursements(); // Refresh the list
+    fetchDisbursements();
   };
 
   const isPoolAdmin = currentUserMembership?.role === "ADMIN";
@@ -222,7 +221,7 @@ const DisbursementsTab: React.FC<DisbursementsTabProps> = ({ poolId, poolDetails
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-2xl font-bold text-gray-800">Pengajuan & Pencairan Dana</h3>
-        {currentUserMembership && ( // Only show button if user is a member
+        {currentUserMembership && (
           <button onClick={() => setIsModalOpen(true)} className="flex items-center bg-[var(--color-p-300)] text-white py-2 px-4 rounded-lg hover:bg-[var(--color-p-400)] transition font-semibold text-sm">
             <PlusCircle size={18} className="mr-2" />
             Ajukan Dana
@@ -253,3 +252,4 @@ const DisbursementsTab: React.FC<DisbursementsTabProps> = ({ poolId, poolDetails
 };
 
 export default DisbursementsTab;
+
