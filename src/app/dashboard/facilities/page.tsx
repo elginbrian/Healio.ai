@@ -208,7 +208,7 @@ const Facilities = () => {
     }
   }, [fetchNearbyFacilities, userLocation]);
 
-  const mapFacilityToDisplayProps = (facility: IFacility): FacilityCardDisplayProps => {
+  const mapFacilityToDisplayProps = (facility: IFacility): FacilityCardDisplayProps & { facilityId: string } => {
     console.log("Mapping facility to display:", facility);
 
     const reviewCount = facility.overall_rating ? Math.floor(Math.random() * 500) + 50 : 0;
@@ -247,7 +247,7 @@ const Facilities = () => {
     }
 
     return {
-      imageSrc: facility.image_url || "/img/hospital_dummy.png",
+      imageSrc: facility.image_url || "/img/pink2.jpg",
       name: facility.name,
       address: facility.address,
       isOpen: isOpen,
@@ -257,6 +257,7 @@ const Facilities = () => {
       reviewCount: reviewCount,
       serviceType: serviceTypeDisplay,
       priceRange: priceRange,
+      facilityId: facility._id?.toString() || `facility-${Math.random().toString(36).substring(2, 11)}`,
     };
   };
 
@@ -347,7 +348,7 @@ const Facilities = () => {
         <div className="flex justify-between items-center mb-8">
           <SearchField onSearch={handleSearch} />
 
-          <NotifProfile profileImageSrc={(user as any)?.picture || "/img/hospital_dummy.png"} />
+          <NotifProfile profileImageSrc={(user as any)?.picture || "/img/pink2.jpg"} />
         </div>
 
         {error && (
@@ -359,7 +360,6 @@ const Facilities = () => {
             </div>
           </div>
         )}
-
 
         {searchQuery && (
           <div className="mb-8">
@@ -375,9 +375,9 @@ const Facilities = () => {
                 <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[var(--color-p-300)]"></div>
               </div>
             ) : searchResults.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
                 {searchResults.map((facility, index) => (
-                  <div key={`search-${facility._id || index}`} className="bg-white rounded-xl shadow-md h-full overflow-hidden">
+                  <div key={`search-${facility._id || index}`} className="w-full">
                     <FacilityCard {...mapFacilityToDisplayProps(facility)} />
                   </div>
                 ))}
@@ -393,7 +393,6 @@ const Facilities = () => {
             )}
           </div>
         )}
-
 
         {!searchQuery && (
           <>
@@ -422,14 +421,8 @@ const Facilities = () => {
                   <div id="facilities-for-you" className="flex overflow-x-auto pb-8 hide-scrollbar" style={{ scrollSnapType: "x mandatory" }}>
                     <div className="flex gap-6 pl-0.5 pr-6">
                       {facilitiesForYou.map((facility, index) => (
-                        <div
-                          key={facility._id || `facility-${index}`}
-                          className={`flex-shrink-0 ${facilitiesForYou.length === 1 ? "w-[280px] sm:w-[350px] md:w-[400px]" : "w-[280px] sm:w-[300px] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)]"}`}
-                          style={{ scrollSnapAlign: "start" }}
-                        >
-                          <div className="bg-white rounded-xl shadow-md h-full overflow-hidden">
-                            <FacilityCard {...mapFacilityToDisplayProps(facility)} />
-                          </div>
+                        <div key={facility._id || `facility-${index}`} className="flex-shrink-0 w-auto" style={{ scrollSnapAlign: "start" }}>
+                          <FacilityCard {...mapFacilityToDisplayProps(facility)} />
                         </div>
                       ))}
                     </div>
@@ -465,14 +458,8 @@ const Facilities = () => {
                   <div id="facilities-nearby" className="flex overflow-x-auto pb-8 hide-scrollbar" style={{ scrollSnapType: "x mandatory" }}>
                     <div className="flex gap-6 pl-0.5 pr-6">
                       {nearbyFacilities.map((facility, index) => (
-                        <div
-                          key={`nearby-${facility._id}-${index}`}
-                          className={`flex-shrink-0 ${nearbyFacilities.length === 1 ? "w-[280px] sm:w-[350px] md:w-[400px]" : "w-[280px] sm:w-[300px] md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)]"}`}
-                          style={{ scrollSnapAlign: "start" }}
-                        >
-                          <div className="bg-white rounded-xl overflow-hidden shadow-sm h-full">
-                            <FacilityCard {...mapFacilityToDisplayProps(facility)} />
-                          </div>
+                        <div key={`nearby-${facility._id}-${index}`} className="flex-shrink-0 w-auto" style={{ scrollSnapAlign: "start" }}>
+                          <FacilityCard {...mapFacilityToDisplayProps(facility)} />
                         </div>
                       ))}
                     </div>
@@ -500,4 +487,3 @@ const Facilities = () => {
 };
 
 export default Facilities;
-
