@@ -78,11 +78,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       console.log("Midtrans transaction status:", midtransStatus);
 
       // Tentukan status baru berdasarkan respons Midtrans
-      let newStatus = contribution.status;
+      let newStatus: ContributionStatus = contribution.status; // Fix: Use full enum type
       let paymentConfirmedDate;
 
-      if (midtransStatus.transaction_status === "settlement" || 
-          midtransStatus.transaction_status === "capture" && midtransStatus.fraud_status === "accept") {
+      if (midtransStatus.transaction_status === "settlement" || (midtransStatus.transaction_status === "capture" && midtransStatus.fraud_status === "accept")) {
         newStatus = ContributionStatus.SUCCESS;
         paymentConfirmedDate = new Date(midtransStatus.settlement_time || midtransStatus.transaction_time || Date.now());
       } else if (midtransStatus.transaction_status === "pending") {
@@ -94,11 +93,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       // Update status kontribusi jika berubah
       if (newStatus !== contribution.status) {
         contribution.status = newStatus;
-        
+
         if (paymentConfirmedDate) {
           contribution.contribution_date = paymentConfirmedDate;
         }
-        
+
         await contribution.save();
 
         // Jika status berubah menjadi SUCCESS, update jumlah dana di pool
@@ -120,12 +119,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       });
     } catch (error: any) {
       console.error("Error checking Midtrans status:", error);
-      return NextResponse.json({
-        success: false,
-        message: `Gagal memeriksa status Midtrans: ${error.message}`,
-        status: contribution.status,
-        contribution,
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Gagal memeriksa status Midtrans: ${error.message}`,
+          status: contribution.status,
+          contribution,
+        },
+        { status: 500 }
+      );
     }
   } catch (error: any) {
     console.error("Error checking contribution status:", error);

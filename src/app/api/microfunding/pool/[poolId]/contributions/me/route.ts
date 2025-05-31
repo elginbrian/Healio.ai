@@ -88,9 +88,12 @@ async function createMidtransSnapTransaction(
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { poolId: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ poolId: string }> }) {
   try {
     await connectToDatabase();
+    // Use await to get the poolId from params
+    const { poolId } = await params;
+
     const userId = getUserIdFromToken(req.headers.get("Authorization"));
     if (!userId) {
       return NextResponse.json({ success: false, message: "Tidak terautentikasi." }, { status: 401 });
@@ -101,7 +104,6 @@ export async function POST(req: NextRequest, { params }: { params: { poolId: str
       return NextResponse.json({ success: false, message: "Pengguna tidak ditemukan." }, { status: 404 });
     }
 
-    const { poolId } = params;
     if (!mongoose.Types.ObjectId.isValid(poolId)) {
       return NextResponse.json({ success: false, message: "Format Pool ID tidak valid." }, { status: 400 });
     }
