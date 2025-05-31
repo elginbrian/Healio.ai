@@ -311,8 +311,7 @@ interface GeminiExtractionResult {
   store_name?: string;
   transaction_date?: string;
 }
-
-export async function processReceiptWithGemini(imagePath: string): Promise<ParsedReceiptData | null> {
+export async function processReceiptWithGemini(imageBuffer: Buffer, mimeType: string): Promise<ParsedReceiptData | null> {
   const apiKey = process.env.GEMINI_API_KEY ?? "";
   if (!apiKey) {
     console.error("GEMINI_API_KEY is not set.");
@@ -321,7 +320,6 @@ export async function processReceiptWithGemini(imagePath: string): Promise<Parse
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-  const imageBuffer = fs.readFileSync(imagePath);
   const imageBase64 = imageBuffer.toString("base64");
 
   const prompt = `
@@ -361,12 +359,11 @@ export async function processReceiptWithGemini(imagePath: string): Promise<Parse
       {
         inlineData: {
           data: imageBase64,
-          mimeType: "image/jpeg",
+          mimeType: mimeType,
         },
       },
     ]);
     const responseText = result.response.text().trim();
-
     const cleanedText = responseText.replace(/^```json\s*|```$/g, "").trim();
 
     console.log("Gemini OCR Raw Response:", cleanedText);
@@ -532,4 +529,3 @@ function generateFallbackRecommendations(hasExpenses: boolean, expenses: any[]):
     ];
   }
 }
-
